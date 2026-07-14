@@ -1,0 +1,33 @@
+{
+  "name": "Dugout — Baseball Lineup & Scoring",
+  "short_name": "Dugout",
+  "description": "A minimal baseball lineup, scoring, and pitch-count app. Per-inning fielding rotations and a printable lineup card. Works offline, no account.",
+  "id": "/dugout/",
+  "start_url": "/dugout/",
+  "scope": "/dugout/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f7f5",
+  "theme_color": "#0a0a0a",
+  "categories": ["sports", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
