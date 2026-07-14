@@ -202,7 +202,14 @@
 
   .device {
     background: var(--bg);        /* match body so no seam shows */
-    max-width: 420px;
+    /* Fluid, not a hard phone cap. The old 420px max created a dead zone:
+       between 420 and 900px the app was a narrow column with up to 480px of
+       empty space beside it, and resizing the window did nothing at all until
+       you crossed 900. That reads as broken, because it is. The app now grows
+       with the viewport; the breakpoints below change the LAYOUT, not just
+       the cap. */
+    width: 100%;
+    max-width: 560px;
     margin: 0 auto;
     min-height: 100vh;
     display: flex;
@@ -1106,6 +1113,9 @@
   }
   .settings-overlay.hidden { display: none; }
   .settings-head {
+    max-width: 560px;
+    width: 100%;
+    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -1135,7 +1145,9 @@
     flex: 1;
     overflow-y: auto;
     padding: 20px;
-    max-width: 420px;
+    /* Matches .device — a panel should never be a different measure from the
+       app it sits over. Raised to 680 at the two-column breakpoint. */
+    max-width: 560px;
     width: 100%;
     margin: 0 auto;
   }
@@ -1388,6 +1400,9 @@
   }
   .setup-overlay.hidden { display: none; }
   .setup-head {
+    max-width: 560px;
+    width: 100%;
+    margin: 0 auto;
     padding: 20px 20px 16px;
     border-bottom: 1px solid var(--line);
     display: flex;
@@ -1423,7 +1438,7 @@
     flex: 1;
     overflow-y: auto;
     padding: 20px;
-    max-width: 480px;
+    max-width: 560px;      /* matches .device */
     width: 100%;
     margin: 0 auto;
   }
@@ -2210,7 +2225,7 @@
        · Tot       → same card, more room, wider stat row
        · Log       → master-detail: list on the left, round on the right
      ══════════════════════════════════════════════════ */
-  @media (min-width: 900px) {
+  @media (min-width: 780px) {
     .device {
       max-width: 1040px;
     }
@@ -2317,7 +2332,7 @@
   /* ── LOG PANES — phone: one at a time ──
      Scoped to max-width so it can't override the wide-screen block above
      regardless of source order. */
-  @media (max-width: 899px) {
+  @media (max-width: 779px) {
     .log-split[data-mode="list"] .log-pane-detail { display: none; }
     .log-split[data-mode="detail"] .log-pane-list { display: none; }
   }
@@ -2735,7 +2750,7 @@
      a 420px phone column, and a 680px settings panel over a 420px app is two
      different measures in one app. The panel should never be wider than the
      thing it belongs to. */
-  @media (min-width: 900px) {
+  @media (min-width: 780px) {
     /* Help reuses .settings-overlay / -head / -body, so it's covered here too.
        (.help-body is a per-section class inside it, NOT a container — capping
        that would have measured each paragraph, not the panel.) */
