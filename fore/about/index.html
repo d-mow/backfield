@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#f7f7f5" />
+
+<!-- Primary -->
+<title>Fore — a minimal golf scorecard app for iPhone</title>
+<meta name="description" content="Fore is a minimal golf scorecard and round-tracking app for iPhone. Built for golfers who want a clean digital scorecard without the team-app bloat." />
+<link rel="canonical" href="https://backfield.io/fore/about/" />
+<meta name="author" content="Backfield" />
+<meta name="robots" content="index, follow" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://backfield.io/fore/about/" />
+<meta property="og:site_name" content="Backfield" />
+<meta property="og:title" content="Fore — minimal golf scorecard app for iPhone" />
+<meta property="og:description" content="A minimal golf scorecard and round-tracking app for iPhone. Built for golfers who want a clean digital scorecard without the team-app bloat." />
+<meta property="og:image" content="https://backfield.io/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Fore — minimal golf scorecard app" />
+<meta name="twitter:description" content="A minimal golf scorecard and round-tracking app for iPhone." />
+<meta name="twitter:image" content="https://backfield.io/og.png" />
+
+<!-- Icons -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23051a12'/%3E%3Crect x='2.6' y='2.6' width='18.8' height='18.8' fill='none' stroke='%23e8e6dc' stroke-width='2.4'/%3E%3Crect x='7.6' y='7.6' width='8.8' height='8.8' fill='%23e8e6dc'/%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+<!-- Structured data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Fore",
+  "url": "https://backfield.io/fore/",
+  "description": "A minimal golf scorecard and round-tracking app for iPhone. Built for golfers who want a clean digital scorecard without the team-app bloat.",
+  "applicationCategory": "SportsApplication",
+  "applicationSubCategory": "Golf",
+  "operatingSystem": "iOS",
+  "featureList": [
+    "Per-hole scorecard with strokes, putts, fairway, GIR",
+    "Hole-by-hole strip view with par-relation marks (circle for birdie, square for bogey)",
+    "Round summary with scoring breakdown, vs par, fairway %, GIR %, and putts",
+    "Round log — save, reopen, and edit past rounds",
+    "Course setup with per-hole pars and distances, in yards or metres",
+    "Excel export and import",
+    "Offline-first, no account required"
+  ],
+  "audience": {
+    "@type": "Audience",
+    "audienceType": "Recreational and competitive golfers"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Backfield",
+    "url": "https://backfield.io/"
+  }
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Per Backfield design discipline:
+     - Body/meta = IBM Plex Mono (locked studio body face)
+     - Display = Big Shoulders Display (matches the Fore app wordmark)
+     - No third face -->
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    /* Light mono palette — same logic as Dugout's about page.
+       Marketing surface stays light for readability; the app itself
+       is dark (Fairway green). Per-project decision per the skill. */
+    --bg:        #f7f7f5;
+    --bg-2:      #ffffff;
+    --line:      #d8d8d3;
+    --line-soft: #ececea;
+    --ink:       #0a0a0a;
+    --ink-mid:   #4a4a48;
+    --ink-dim:   #8a8a86;
+    /* Single accent — used only in one role (the period after "Fore"
+       and the numbered step markers in the install card). */
+    --accent:    #d4a73f;  /* Fore's gold — same as Fairway theme accent */
+    --display:   'Big Shoulders Display', system-ui, sans-serif;
+    --mono:      'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--bg); color: var(--ink); min-height: 100vh; }
+  body {
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--ink); color: var(--bg); }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  /* Top bar — small studio breadcrumb */
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .top a {
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .top a:hover { border-color: var(--ink-dim); }
+
+  /* === HERO === */
+  .hero {
+    padding: 56px 0 40px;
+    text-align: center;
+  }
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 12px;
+  }
+  .hero-name {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(72px, 16vw, 156px);
+    line-height: 0.85;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .hero-tag {
+    margin-top: 16px;
+    font-family: var(--mono);
+    font-size: clamp(16px, 2.5vw, 20px);
+    line-height: 1.5;
+    color: var(--ink-mid);
+    max-width: 36ch;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* CTA */
+  .cta-row {
+    margin-top: 32px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 600;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+  }
+  .cta-primary {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .cta-primary:hover {
+    transform: translateY(-1px);
+  }
+  .cta-secondary {
+    border: 1px solid var(--line);
+    color: var(--ink-mid);
+  }
+  .cta-secondary:hover {
+    border-color: var(--ink-mid);
+    color: var(--ink);
+  }
+  .cta-arr {
+    display: inline-block;
+    transition: transform 0.2s;
+  }
+  .cta:hover .cta-arr { transform: translateX(4px); }
+
+  /* === PREVIEW SHOT === */
+  .preview {
+    margin: 60px auto 0;
+    max-width: 360px;
+    position: relative;
+  }
+  .preview img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.04),
+      0 12px 32px -8px rgba(0,0,0,0.12),
+      0 32px 64px -16px rgba(0,0,0,0.08);
+  }
+  .preview-caption {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  /* === SECTIONS === */
+  section {
+    padding: 64px 0 0;
+  }
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section h2 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(36px, 6vw, 56px);
+    line-height: 0.95;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 20px;
+  }
+  .section p {
+    color: var(--ink-mid);
+    margin-bottom: 16px;
+    max-width: 60ch;
+  }
+  .section p strong {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  /* Features list — numbered rows with hairline dividers. No icons. */
+  .feat {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .feat li {
+    padding: 22px 0;
+    border-bottom: 1px solid var(--line-soft);
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 20px;
+    align-items: baseline;
+  }
+  .feat li:last-child { border-bottom: none; }
+  .feat-num {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 24px;
+    color: var(--ink-dim);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .feat-body h3 {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 24px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .feat-body p {
+    color: var(--ink-mid);
+    font-size: 14px;
+    margin: 0;
+    max-width: none;
+  }
+
+  /* Install card */
+  .install {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 24px;
+    margin-top: 24px;
+  }
+  .install ol {
+    list-style: none;
+    counter-reset: step;
+    padding: 0;
+  }
+  .install li {
+    counter-increment: step;
+    padding: 10px 0;
+    padding-left: 36px;
+    position: relative;
+    color: var(--ink-mid);
+  }
+  .install li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 8px;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 20px;
+    color: var(--accent);
+    width: 24px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .install strong { color: var(--ink); font-weight: 500; }
+
+  /* Honest section — dashed border, no fill */
+  .honest {
+    margin-top: 24px;
+    padding: 24px;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+  }
+  .honest p { font-size: 14px; }
+  .honest ul {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0 0;
+  }
+  .honest li {
+    padding: 6px 0;
+    padding-left: 20px;
+    color: var(--ink-mid);
+    font-size: 14px;
+    position: relative;
+  }
+  .honest li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--ink-dim);
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 80px;
+    padding: 24px 0;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  footer a {
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  footer a:hover { border-color: var(--ink); color: var(--ink); }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 16px; }
+    .hero { padding: 32px 0 24px; }
+    .preview { max-width: 100%; margin-top: 40px; }
+    .cta-row { flex-direction: column; align-items: stretch; }
+    .cta { justify-content: center; }
+    section { padding: 48px 0 0; }
+    .feat li { grid-template-columns: 40px 1fr; gap: 14px; }
+    .feat-num { font-size: 20px; }
+    .feat-body h3 { font-size: 20px; }
+    footer { flex-direction: column; }
+  }
+
+  .hero-mark {
+    width: 44px;
+    height: 44px;
+    color: var(--ink);
+    margin: 0 auto 18px;
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+  <div class="wrap">
+
+    <div class="top">
+      <a href="/fore/">← Open Fore</a>
+      <a href="/">Backfield.io</a>
+    </div>
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="hero-eyebrow">A Backfield app</div>
+      <!-- Fore's app mark, composed at 44px. Same concentric squares as the
+           in-app masthead and the favicon — the double-bogey glyph. -->
+      <svg class="hero-mark" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+           aria-hidden="true" focusable="false">
+        <rect x="2.6" y="2.6" width="18.8" height="18.8" stroke-width="2.4" />
+        <path fill="currentColor" stroke="none" fill-rule="evenodd"
+              d="M7.6 7.6h8.8v8.8H7.6z M11.1 11.1h1.8v1.8h-1.8z" />
+      </svg>
+      <h1 class="hero-name">FORE</h1>
+      <p class="hero-tag">
+        A minimal golf scorecard and round-tracking app for iPhone. For golfers who want a clean digital scorecard without the team-app bloat.
+      </p>
+
+      <div class="cta-row">
+        <a class="cta cta-primary" href="/fore/">
+          Open Fore <span class="cta-arr">→</span>
+        </a>
+        <a class="cta cta-secondary" href="#install">
+          How to install
+        </a>
+      </div>
+
+      <!-- Preview shot — Fore's Tot tab: full scorecard and round stats -->
+      <figure class="preview">
+        <img src="preview.png" alt="The Fore app on a dark green background, showing the Tot tab: a large round total, a full eighteen-hole scorecard with hole numbers, pars and scores, a double-bogey marked with a square, and a stats row reading vs par, fairway, greens in regulation and putts." />
+        <figcaption class="preview-caption">Tot tab · the full card</figcaption>
+      </figure>
+    </header>
+
+    <!-- What it is -->
+    <section>
+      <div class="section-label">01 · What it is</div>
+      <h2>A scorecard in your pocket.</h2>
+      <p>
+        Fore is a small app for keeping score while you play. Set up a course, record strokes hole by hole, track putts and fairways if you want, see how you did. <strong>That's it.</strong> No GPS, no shot tracking, no handicap calculation, no social features.
+      </p>
+      <p>
+        It's the app for the part of golf that's most like keeping score on paper — the part those other apps make harder than it needs to be.
+      </p>
+    </section>
+
+    <!-- What it does -->
+    <section>
+      <div class="section-label">02 · What it does</div>
+      <h2>The whole feature list.</h2>
+      <ol class="feat">
+        <li>
+          <div class="feat-num">01</div>
+          <div class="feat-body">
+            <h3>Hole strip</h3>
+            <p>Horizontal nine-hole row. Tap a hole to score it. Score marks — circle for birdie, square for bogey — match the conventions on a paper scorecard.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">02</div>
+          <div class="feat-body">
+            <h3>Score a hole</h3>
+            <p>Tap the strokes scoreboard to record par. Plus or minus to adjust. Putts, fairway, green in regulation if you want them — skip them if you don't.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">03</div>
+          <div class="feat-body">
+            <h3>Course setup</h3>
+            <p>Set par and distance per hole, with a slider. Yards or metres, your choice. Distance is optional. Edit any time mid-round if the card was wrong.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">04</div>
+          <div class="feat-body">
+            <h3>Round summary</h3>
+            <p>Total versus par, fairways hit, greens in regulation, putts. Finish all eighteen and you also get a scoring breakdown — birdies, pars, bogeys — plus your best and toughest hole.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">05</div>
+          <div class="feat-body">
+            <h3>Round log</h3>
+            <p>Save finished rounds. Reopen them to edit. Delete what you don't want. The full scorecard preserved per round.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">06</div>
+          <div class="feat-body">
+            <h3>Excel export</h3>
+            <p>Rounds live in your browser, not on a server — so browser storage isn't a real backup. Export a spreadsheet you actually own, and import it back later or on another device. Fore reminds you when you're overdue.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- How to install -->
+    <section id="install">
+      <div class="section-label">03 · How to install</div>
+      <h2>Add to home screen.</h2>
+      <p>
+        Fore is a Progressive Web App — it runs in your iPhone's browser but you can install it to your home screen so it opens like a native app. Nothing to download from the App Store, and it works offline.
+      </p>
+
+      <div class="install">
+        <ol>
+          <li>Open <strong>backfield.io/fore</strong> in <strong>Safari</strong> on your iPhone</li>
+          <li>Tap the <strong>Share</strong> button at the bottom of the screen</li>
+          <li>Scroll down and tap <strong>Add to Home Screen</strong></li>
+          <li>Tap <strong>Add</strong> in the top right</li>
+        </ol>
+      </div>
+
+      <p style="margin-top: 16px; font-size: 13px;">
+        Fore will appear on your home screen as a regular app icon. Opens full-screen, works offline, remembers your rounds between sessions.
+      </p>
+    </section>
+
+    <!-- The honest part -->
+    <section>
+      <div class="section-label">04 · The honest part</div>
+      <h2>What Fore isn't.</h2>
+      <p>
+        Some things this app does not do, on purpose:
+      </p>
+      <div class="honest">
+        <ul>
+          <li>No GPS, no rangefinder, no shot tracking</li>
+          <li>No handicap calculation or USGA index</li>
+          <li>No friends, leaderboards, or social posting</li>
+          <li>No course library — you enter the course you're playing</li>
+          <li>No advanced stats — just what you'd track on paper</li>
+          <li>No subscriptions, no in-app purchases, no ads</li>
+          <li>No account, and no server — which also means no cloud backup</li>
+        </ul>
+      </div>
+      <p style="margin-top: 20px;">
+        That last one is the tradeoff worth understanding. Your rounds live in your browser, not on someone else's computer. Nobody can mine them, and nobody can lose them but you — so Fore nudges you to export a spreadsheet now and then, and that export is a real file you own.
+      </p>
+      <p>
+        It's built for the phone in your hand on the course. It works fine on a laptop, and the layout opens up there for reading old rounds, but scoring is designed for a thumb.
+      </p>
+      <p>
+        If you want GPS yardages and a course library, try 18Birdies or Arccos — they're built for that. Fore is for the part of golf those apps make harder than it needs to be: actually keeping score.
+      </p>
+      <p>
+        <strong>Free to use.</strong> Made by Dan at <a href="/" style="color: var(--ink); border-bottom: 1px solid var(--ink); font-weight: 500;">Backfield</a>, a small studio.
+      </p>
+    </section>
+
+    <footer>
+      <span>© 2026 Backfield · A small studio</span>
+      <span><a href="mailto:dan@backfield.io">dan@backfield.io</a></span>
+    </footer>
+
+  </div>
+
+</body>
+</html>
