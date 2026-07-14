@@ -1,1 +1,554 @@
-test
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#f7f7f5" />
+
+<!-- Primary -->
+<title>Dugout — a minimal baseball lineup &amp; scoring app for iPhone</title>
+<meta name="description" content="Dugout is a minimal baseball lineup, scoring, and pitch-count app for iPhone — with per-inning fielding rotations and a printable lineup card. Built for Little League and youth baseball coaches who want something simpler than the big team management apps." />
+<link rel="canonical" href="https://backfield.io/dugout/about/" />
+<meta name="author" content="Backfield" />
+<meta name="robots" content="index, follow" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://backfield.io/dugout/about/" />
+<meta property="og:site_name" content="Backfield" />
+<meta property="og:title" content="Dugout — minimal baseball app for iPhone" />
+<meta property="og:description" content="A minimal baseball lineup, scoring, and pitch-count app for iPhone. Built for Little League and youth baseball coaches." />
+<meta property="og:image" content="https://backfield.io/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Dugout — a minimal baseball lineup, scoring, and pitch-count app for iPhone, by Backfield." />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Dugout — minimal baseball app" />
+<meta name="twitter:description" content="A minimal baseball lineup, scoring, and pitch-count app for iPhone." />
+<meta name="twitter:image" content="https://backfield.io/og.png" />
+
+<!-- Icons -->
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+<!-- Structured data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Dugout",
+  "url": "https://backfield.io/dugout/",
+  "description": "A minimal baseball lineup, scoring, and pitch-count app for iPhone. Built for Little League and youth baseball coaches.",
+  "applicationCategory": "SportsApplication",
+  "applicationSubCategory": "Baseball",
+  "operatingSystem": "iOS",
+  "featureList": [
+    "Drag-reorder batting lineups",
+    "Tap-to-score linescore",
+    "Per-inning fielding rotations",
+    "Pitch count tracking",
+    "Season game log",
+    "Offline-first, no account required"
+  ],
+  "audience": {
+    "@type": "Audience",
+    "audienceType": "Little League and youth baseball coaches"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Backfield",
+    "url": "https://backfield.io/"
+  }
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg:        #f7f7f5;    /* paper */
+    --bg-2:      #ffffff;    /* lifted */
+    --line:      #d8d8d3;
+    --line-soft: #ececea;
+    --ink:       #0a0a0a;    /* near-black */
+    --ink-mid:   #4a4a48;
+    --ink-dim:   #8a8a86;
+    --accent:    #0a0a0a;    /* same as ink — monochrome */
+    --display:   'Bebas Neue', system-ui, sans-serif;
+    --mono:      'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--bg); color: var(--ink); min-height: 100vh; }
+  body {
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--ink); color: var(--bg); }
+
+  /* Visually hidden but available to screen readers and search crawlers */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  /* Top bar — small studio breadcrumb */
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .top a {
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .top a:hover { border-color: var(--ink-dim); }
+
+  /* === HERO === */
+  .hero {
+    padding: 56px 0 40px;
+    text-align: center;
+  }
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 12px;
+  }
+  .hero-name {
+    font-family: var(--display);
+    font-size: clamp(72px, 16vw, 156px);
+    line-height: 0.85;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+  }
+  .hero-tag {
+    margin-top: 16px;
+    font-family: var(--mono);
+    font-size: clamp(16px, 2.5vw, 20px);
+    line-height: 1.5;
+    color: var(--ink-mid);
+    max-width: 36ch;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* CTA */
+  .cta-row {
+    margin-top: 32px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 600;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+  }
+  .cta-primary {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .cta-primary:hover {
+    background: var(--accent);
+    transform: translateY(-1px);
+  }
+  .cta-secondary {
+    border: 1px solid var(--line);
+    color: var(--ink-mid);
+  }
+  .cta-secondary:hover {
+    border-color: var(--ink-mid);
+    color: var(--ink);
+  }
+  .cta-arr {
+    display: inline-block;
+    transition: transform 0.2s;
+  }
+  .cta:hover .cta-arr { transform: translateX(4px); }
+
+  /* === PREVIEW SHOT === */
+  .preview {
+    margin: 60px auto 0;
+    max-width: 520px;
+    position: relative;
+  }
+  .preview img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.04),
+      0 12px 32px -8px rgba(0,0,0,0.12),
+      0 32px 64px -16px rgba(0,0,0,0.08);
+  }
+  .preview-caption {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  /* === SECTIONS === */
+  section {
+    padding: 64px 0 0;
+  }
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section h2 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(36px, 6vw, 56px);
+    line-height: 0.95;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    margin-bottom: 20px;
+  }
+  .section p {
+    color: var(--ink-mid);
+    margin-bottom: 16px;
+    max-width: 60ch;
+  }
+  .section p strong {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  /* Features list — written, not iconified */
+  .feat {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .feat li {
+    padding: 22px 0;
+    border-bottom: 1px solid var(--line-soft);
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 20px;
+    align-items: baseline;
+  }
+  .feat li:last-child { border-bottom: none; }
+  .feat-num {
+    font-family: var(--display);
+    font-size: 24px;
+    color: var(--ink-dim);
+    text-align: center;
+  }
+  .feat-body h3 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 24px;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .feat-body p {
+    color: var(--ink-mid);
+    font-size: 14px;
+    margin: 0;
+    max-width: none;
+  }
+
+  /* Install instructions */
+  .install {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 24px;
+    margin-top: 24px;
+  }
+  .install ol {
+    list-style: none;
+    counter-reset: step;
+    padding: 0;
+  }
+  .install li {
+    counter-increment: step;
+    padding: 10px 0;
+    padding-left: 36px;
+    position: relative;
+    color: var(--ink-mid);
+  }
+  .install li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 8px;
+    font-family: var(--display);
+    font-size: 20px;
+    color: var(--accent);
+    width: 24px;
+    text-align: center;
+  }
+  .install strong { color: var(--ink); font-weight: 500; }
+
+  /* Honest section */
+  .honest {
+    margin-top: 24px;
+    padding: 24px;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+  }
+  .honest p { font-size: 14px; }
+  .honest ul {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0 0;
+  }
+  .honest li {
+    padding: 6px 0;
+    padding-left: 20px;
+    color: var(--ink-mid);
+    font-size: 14px;
+    position: relative;
+  }
+  .honest li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--ink-dim);
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 80px;
+    padding: 24px 0;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  footer a {
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  footer a:hover { border-color: var(--ink); color: var(--ink); }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 16px; }
+    .hero { padding: 32px 0 24px; }
+    .preview { max-width: 100%; margin-top: 40px; }
+    .cta-row { flex-direction: column; align-items: stretch; }
+    .cta { justify-content: center; }
+    section { padding: 48px 0 0; }
+    .feat li { grid-template-columns: 40px 1fr; gap: 14px; }
+    .feat-num { font-size: 20px; }
+    .feat-body h3 { font-size: 20px; }
+    footer { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="wrap">
+
+    <div class="top">
+      <a href="/dugout/">← Open Dugout</a>
+      <a href="/">Backfield.io</a>
+    </div>
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="hero-eyebrow">A Backfield app</div>
+      <h1 class="hero-name">DUGOUT</h1>
+      <p class="hero-tag">
+        A minimal baseball lineup, scoring, and pitch-count app for iPhone. Built for Little League and youth coaches who want something simpler.
+      </p>
+
+      <p class="sr-only">
+        Dugout is a minimal baseball scorekeeper and Little League lineup app for iPhone. It handles the batting order, a tappable linescore, pitch counts per pitcher, a season game log, and per-inning fielding rotations — assign a different defensive lineup to every inning so you can rotate younger players through every position. It also prints: a printable baseball lineup card showing each player's position by inning, two to a page with a fold line so you can tear one off for an assistant coach, plus a printable game summary with the linescore and pitch counts. Dugout is a Progressive Web App: it installs to your iPhone home screen from Safari, runs offline, and needs no account. Made by Backfield, a small software studio, for coaches who want something simpler than GameChanger or TeamSnap for the part of the job that matters in the dugout — keeping score during the game.
+      </p>
+
+      <div class="cta-row">
+        <a class="cta cta-primary" href="/dugout/">
+          Open Dugout <span class="cta-arr">→</span>
+        </a>
+        <a class="cta cta-secondary" href="#install">
+          How to install
+        </a>
+      </div>
+
+      <!-- Preview shot -->
+      <figure class="preview">
+        <img src="preview.png" alt="Dugout app Field tab on iPhone — a baseball diamond with each defensive position filled: Homer H. pitching, Dusty D. catching, Slider S. in left, Curveball C. in center, Lefty L. in right. An inning selector across the top shows inning 2 selected, because every inning has its own fielding rotation." />
+        <figcaption class="preview-caption">Score tab · Top of the 3rd</figcaption>
+      </figure>
+    </header>
+
+    <!-- What it is -->
+    <section>
+      <div class="section-label">01 · What it is</div>
+      <h2>A scorebook in your pocket.</h2>
+      <p>
+        Dugout is a small app for people who keep score from the dugout. Set a batting order, track the linescore, count pitches, rotate fielders inning by inning. <strong>That's it.</strong> No accounts, no syncing, no team management features you don't need.
+      </p>
+      <p>
+        It's the app a coach with too much to think about already would actually use. Built by someone who keeps score from the dugout himself.
+      </p>
+    </section>
+
+    <!-- What it does -->
+    <section>
+      <div class="section-label">02 · What it does</div>
+      <h2>The whole feature list.</h2>
+      <ol class="feat">
+        <li>
+          <div class="feat-num">01</div>
+          <div class="feat-body">
+            <h3>Bat</h3>
+            <p>Drag-reorder the batting order. Bench players and swap them in. The lineup card, but you can rearrange it with a thumb.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">02</div>
+          <div class="feat-body">
+            <h3>Field</h3>
+            <p>Tap a position on the diamond, pick a player. Every inning has its own field — rotate beginners through every spot without losing track. A grid view shows who's where across all innings at a glance.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">03</div>
+          <div class="feat-body">
+            <h3>Score</h3>
+            <p>Tappable linescore. Increment runs by half-inning. Balls, strikes, outs. Looks like the scoreboard.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">04</div>
+          <div class="feat-body">
+            <h3>Pitch</h3>
+            <p>One big tap to count a pitch. Track strikes separately. Switch pitchers when you need to.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">05</div>
+          <div class="feat-body">
+            <h3>Game</h3>
+            <p>The whole game on one screen — scoreboard, lineup, field, and pitch counts. Copy a summary to share, or save it to your log.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">06</div>
+          <div class="feat-body">
+            <h3>Log</h3>
+            <p>Save finished games. Reopen them to edit. Season record. Export to Excel if you want to.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">07</div>
+          <div class="feat-body">
+            <h3>Print</h3>
+            <p>A real lineup card, on paper. The batting order down the side, each player's position by inning across the top, and a small field diagram in the corner. Two identical cards print per page with a fold line between them — fold, tear, and hand one to your assistant. There's a game summary sheet too: final score, linescore by inning, and pitch counts.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- How to install -->
+    <section id="install">
+      <div class="section-label">03 · How to install</div>
+      <h2>Add to home screen.</h2>
+      <p>
+        Dugout is a Progressive Web App — it runs in your iPhone's browser but you can install it to your home screen so it opens like a native app. There's nothing to download from the App Store, and it works offline.
+      </p>
+
+      <div class="install">
+        <ol>
+          <li>Open <strong>backfield.io/dugout</strong> in <strong>Safari</strong> on your iPhone</li>
+          <li>Tap the <strong>Share</strong> button at the bottom of the screen</li>
+          <li>Scroll down and tap <strong>Add to Home Screen</strong></li>
+          <li>Tap <strong>Add</strong> in the top right</li>
+        </ol>
+      </div>
+
+      <p style="margin-top: 16px; font-size: 13px;">
+        Dugout will appear on your home screen as a regular app icon. Opens full-screen, works offline, remembers your team between games.
+      </p>
+    </section>
+
+    <!-- The honest part -->
+    <section>
+      <div class="section-label">04 · The honest part</div>
+      <h2>What Dugout isn't.</h2>
+      <p>
+        Some things this app does not do, on purpose:
+      </p>
+      <div class="honest">
+        <ul>
+          <li>No accounts, no logins, no cloud sync</li>
+          <li>No team chat, parent messaging, or roster sharing</li>
+          <li>No live game streaming or notifications</li>
+          <li>No sabermetrics, spray charts, or exit velocity — season tallies and a batting average, the kind of thing you'd keep on paper</li>
+          <li>No subscriptions, no in-app purchases, no ads</li>
+          <li>Built and tested for iPhone — it may run in other browsers, but that's not what it's for</li>
+        </ul>
+      </div>
+      <p style="margin-top: 20px;">
+        If you need team management, try GameChanger or TeamSnap — they're great at that. Dugout is for the part of the job those apps make harder than it needs to be: actually keeping score during the game.
+      </p>
+      <p>
+        <strong>Free to use.</strong> Made by Dan at <a href="/" style="color: var(--ink); border-bottom: 1px solid var(--ink); font-weight: 500;">Backfield</a>, a small studio.
+      </p>
+    </section>
+
+    <footer>
+      <span>© 2026 Backfield · A small studio</span>
+      <span><a href="mailto:dan@backfield.io">dan@backfield.io</a></span>
+    </footer>
+
+  </div>
+
+</body>
+</html>
