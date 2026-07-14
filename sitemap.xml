@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Backfield sitemap.
+  RULE: only list URLs that actually resolve. Listing an unshipped app = a 404
+  in Search Console and a hit to crawl trust.
+  When you deploy an app: uncomment its two lines below. That's the whole step.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <url>
+    <loc>https://backfield.io/</loc>
+    <lastmod>2026-07-14</lastmod>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- ── LIVE ─────────────────────────────────────────────── -->
+
+  <url>
+    <loc>https://backfield.io/dugout/</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://backfield.io/dugout/about/</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://backfield.io/fore/</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://backfield.io/fore/about/</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- ── NOT YET DEPLOYED — uncomment each pair on ship ────── -->
+
+  <!-- Stats
+  <url><loc>https://backfield.io/bench/</loc><priority>0.9</priority></url>
+  <url><loc>https://backfield.io/bench/about/</loc><priority>0.8</priority></url>
+  -->
+
+  <!-- Field
+  <url><loc>https://backfield.io/walk/</loc><priority>0.9</priority></url>
+  <url><loc>https://backfield.io/walk/about/</loc><priority>0.8</priority></url>
+
+  <url><loc>https://backfield.io/field-camera/</loc><priority>0.9</priority></url>
+  <url><loc>https://backfield.io/field-camera/about/</loc><priority>0.8</priority></url>
+
+  <url><loc>https://backfield.io/aerial/</loc><priority>0.9</priority></url>
+  <url><loc>https://backfield.io/aerial/about/</loc><priority>0.8</priority></url>
+  -->
+
+  <!-- Reference
+  <url><loc>https://backfield.io/field-reference/</loc><priority>0.9</priority></url>
+  <url><loc>https://backfield.io/field-reference/about/</loc><priority>0.8</priority></url>
+
+  <url><loc>https://backfield.io/wind-rose/</loc><priority>0.9</priority></url>
+  <url><loc>https://backfield.io/wind-rose/about/</loc><priority>0.8</priority></url>
+  -->
+
+  <!-- Organize
+  <url><loc>https://backfield.io/punch/</loc><priority>0.9</priority></url>
+  <url><loc>https://backfield.io/punch/about/</loc><priority>0.8</priority></url>
+
+  <url><loc>https://backfield.io/stub/</loc><priority>0.9</priority></url>
+  <url><loc>https://backfield.io/stub/about/</loc><priority>0.8</priority></url>
+
+  <url><loc>https://backfield.io/span/</loc><priority>0.9</priority></url>
+  <url><loc>https://backfield.io/span/about/</loc><priority>0.8</priority></url>
+
+  <url><loc>https://backfield.io/folio/</loc><priority>0.9</priority></url>
+  <url><loc>https://backfield.io/folio/about/</loc><priority>0.8</priority></url>
+  -->
+
+  <!-- Design
+  <url><loc>https://backfield.io/lattice/</loc><priority>0.9</priority></url>
+  <url><loc>https://backfield.io/lattice/about/</loc><priority>0.8</priority></url>
+
+  <url><loc>https://backfield.io/cue/</loc><priority>0.9</priority></url>
+  <url><loc>https://backfield.io/cue/about/</loc><priority>0.8</priority></url>
+  -->
+
+</urlset>
