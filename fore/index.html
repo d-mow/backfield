@@ -2717,6 +2717,71 @@
     border-radius: 8px;
     padding: 10px 14px;
   }
+  /* ══════════════════════════════════════════════════════════════
+     WIDE SCREENS — overlay content.
+
+     The overlays are `inset: 0` surfaces, which is right: the backdrop should
+     cover the viewport. But their CONTENT was inheriting that width, so on a
+     1600px display the settings rows stretched the full screen and the setup
+     grid stranded itself against the left edge.
+
+     The backdrop stays full-bleed. The content becomes a centred column that
+     matches the app's own measure. A settings row 1600px wide is not a
+     settings row, it's a horizon.
+     ══════════════════════════════════════════════════════════════ */
+  /* Overlay content on wide screens.
+
+     Breakpoint is 900px to MATCH the app's own — below that the device is still
+     a 420px phone column, and a 680px settings panel over a 420px app is two
+     different measures in one app. The panel should never be wider than the
+     thing it belongs to. */
+  @media (min-width: 900px) {
+    /* Help reuses .settings-overlay / -head / -body, so it's covered here too.
+       (.help-body is a per-section class inside it, NOT a container — capping
+       that would have measured each paragraph, not the panel.) */
+    .settings-head,
+    .settings-body,
+    .setup-head,
+    .setup-body {
+      width: 100%;
+      max-width: 680px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .settings-overlay,
+    .setup-overlay {
+      align-items: center;
+    }
+    .settings-overlay > *,
+    .setup-overlay > * {
+      width: 100%;
+    }
+  }
+
+  /* Setup: eighteen rows in one column is ~1.4 screens of scroll on a laptop.
+     There's room for two, and golf already has the right seam — front nine and
+     back nine. Split there, not at an arbitrary midpoint.
+
+     NOTE the selector: the live element is .par-grid.is-combined-mode, which
+     sets display:flex. A bare .par-grid rule loses on specificity and the grid
+     properties sit there inert. */
+  @media (min-width: 1000px) {
+    .setup-head,
+    .setup-body {
+      max-width: 940px;
+    }
+    .par-grid.is-combined-mode {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      /* Column flow over nine rows fills 1-9 down the left, then 10-18 down
+         the right. Row flow would interleave them (1, 10, 2, 11 …). */
+      grid-auto-flow: column;
+      grid-template-rows: repeat(9, auto);
+      column-gap: 34px;
+      row-gap: 4px;
+    }
+  }
 
   /* Visually hidden — for crawlers and screen readers, never seen. */
   .sr-only {
