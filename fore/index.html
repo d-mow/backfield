@@ -57,15 +57,11 @@
 }
 </script>
 
-<!-- Favicon: the same poché mark, with ONE deliberate change — the counter is
-     dropped. At 16px it's under a pixel and renders as mud, not as a hole. This
-     is an optical correction for size, the way a typeface ships different
-     optical sizes; it is not a second mark. If you change the mark, change this.
-
-     NOTE: currentColor does NOT inherit in a favicon (or an <img src>) — only
-     when the SVG is inlined in the document. So the hex is explicit: Fairway
-     ink on Fairway bg. -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23051a12'/%3E%3Crect x='2.6' y='2.6' width='18.8' height='18.8' fill='none' stroke='%23e8e6dc' stroke-width='2.4'/%3E%3Crect x='7.6' y='7.6' width='8.8' height='8.8' fill='%23e8e6dc'/%3E%3C/svg%3E" />
+<!-- Favicon: the same poché mark, no counter, matching the icons and masthead.
+     Stroke 3.2, sharp (miter) corners. currentColor does NOT inherit in a
+     favicon (or an <img src>) — only when the SVG is inlined in the document —
+     so the hex is explicit: Fairway ink on Fairway bg. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23051a12'/%3E%3Crect x='2.6' y='2.6' width='18.8' height='18.8' fill='none' stroke='%23e8e6dc' stroke-width='3.2' stroke-linejoin='miter'/%3E%3Crect x='7.6' y='7.6' width='8.8' height='8.8' fill='%23e8e6dc'/%3E%3C/svg%3E" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -223,15 +219,26 @@
     border-bottom: 1px solid var(--line);
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
+    /* Simple centre. Both sides are trimmed to their content (the wordmark box
+       is cap-trimmed; the right block sizes to its text), so centring lands the
+       mark, wordmark, course and gear on one line with no per-element nudges. */
+    align-items: center;
   }
   .brand {
     font-family: var(--display);
     font-weight: 400;
-    font-size: var(--fs-display);
-    line-height: 1;
+    /* 40px → ~26px cap-height in Big Shoulders (cap ratio 0.586), matching the
+       26px mark. */
+    font-size: 40px;
     letter-spacing: -0.01em;
     color: var(--ink);
+    /* Trim the half-leading so the box hugs the cap-height. Then the row's
+       align-items:center centres the CAPS on the mark — no magic offset, and
+       it's font-agnostic. text-box-trim is the modern one-liner; line-height:1
+       + the negative-margin fallback covers browsers without it. */
+    line-height: 1;
+    text-box-trim: trim-both;
+    text-box-edge: cap alphabetic;
   }
   .brand-sub {
     font-family: var(--mono);
@@ -239,12 +246,21 @@
     letter-spacing: var(--ls-caps);
     text-transform: uppercase;
     color: var(--ink-dim);
+    /* Out of flow, pinned below the wordmark, so it doesn't push the mark
+       off-centre. Space reserved by .brand-block padding-bottom. */
+    position: absolute;
+    top: 100%;
+    left: 0;
     margin-top: 4px;
+    white-space: nowrap;
   }
   .head-right {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
+    /* Match the brand-block's reserved sub-line space so both sides share the
+       same box centre — keeps the gear/meta on the wordmark line. */
+    padding-bottom: 19px;
   }
   .head-meta {
     text-align: right;
@@ -484,7 +500,7 @@
     letter-spacing: var(--ls-caps);
     text-transform: uppercase;
     color: var(--ink-dim);
-    margin-top: 6px;
+    margin-top: 8px;
   }
 
   /* ── SURFACE CARD ─────────────────────────────
@@ -2603,12 +2619,17 @@
      icon in chrome — it's identity, not affordance. */
   .brand-block {
     display: flex;
-    align-items: center;
+    align-items: center;      /* mark centres on the trimmed wordmark box */
     gap: 11px;
+    /* Reserve room for the absolutely-placed sub-line below, so the header
+       still sizes correctly and the sub never overlaps the tabs. */
+    padding-bottom: 19px;
   }
   .brand-mark {
-    width: 26px;
-    height: 26px;
+    /* Sized ~25% above the cap height so the mark reads a touch larger than the
+       "F" — a deliberate optical weighting, not a strict height match. 28→35px. */
+    width: 35px;
+    height: 35px;
     flex: none;
     color: var(--ink);
     /* Composed at 44px on the about page, legible at 16px as the favicon. */
@@ -3133,21 +3154,19 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
 
     <header class="top">
       <div class="brand-block">
-        <!-- Fore's app mark: the double bogey, in poché.
-             Outer ring stroked heavy; inner block SOLID with a knocked-out
-             counter. The counter is a true hole (fill-rule: evenodd), not a
-             shape painted in the background colour — so the mark still works
-             on any ground and still inherits currentColor across all themes.
-             Poché is already in the studio's GS-01 vocabulary; the earlier
-             hairline version was the outlier. -->
+        <!-- Fore's app mark: the double bogey, poché.
+             Outer ring stroked; inner block SOLID. The counter (centre hole)
+             was dropped in the icon tuner for a cleaner mark that holds at
+             every size — so it's gone here too. One mark on every surface:
+             masthead, about hero, favicon, home-screen icon. currentColor
+             on the fill so it tracks the theme ink. -->
         <svg class="brand-mark" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+             stroke="currentColor" stroke-linecap="butt" stroke-linejoin="miter"
              aria-hidden="true" focusable="false">
-          <rect x="2.6" y="2.6" width="18.8" height="18.8" stroke-width="2.4" />
-          <path fill="currentColor" stroke="none" fill-rule="evenodd"
-                d="M7.6 7.6h8.8v8.8H7.6z M11.1 11.1h1.8v1.8h-1.8z" />
+          <rect x="2.6" y="2.6" width="18.8" height="18.8" stroke-width="3.2" />
+          <rect x="7.6" y="7.6" width="8.8" height="8.8" fill="currentColor" stroke="none" />
         </svg>
-        <div>
+        <div style="position:relative">
           <div class="brand">Fore</div>
           <div class="brand-sub">Scorecard</div>
         </div>
