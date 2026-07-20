@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0d3324" />
-<title>Fore — a minimal golf scorecard for iPhone</title>
+<title>Fore</title>
 <meta name="description" content="Fore is a minimal golf scorecard and round-tracking app for iPhone. Keep score hole by hole, offline, with no account and no team-app bloat." />
 <link rel="canonical" href="https://backfield.io/fore/" />
 <meta name="author" content="Backfield" />
@@ -852,6 +852,10 @@
     transform: translate(-50%, -50%);
     pointer-events: none;
   }
+  .strip-cell .sc-score.eagle .mark {
+    border: 1.5px double currentColor;
+    border-radius: 50%;
+  }
   .strip-cell .sc-score.birdie .mark {
     border: 1.5px solid currentColor;
     border-radius: 50%;
@@ -940,6 +944,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    /* none (not manipulation) so a press-and-hold isn't stolen by the browser
+       as a scroll/pan gesture. These are small point targets, never scrolled. */
+    touch-action: none;
     transition: transform var(--dur-micro), background var(--dur-micro);
   }
   .dt-stepper-btn:active {
@@ -1624,6 +1631,7 @@
     line-height: 1;
     height: 28px;
     cursor: pointer;
+    touch-action: none;   /* press-and-hold not read as a pan */
     transition: background var(--dur-micro), color var(--dur-micro);
     padding: 0;
   }
@@ -2818,6 +2826,52 @@
       row-gap: 4px;
     }
   }
+  /* ── TOUCH: prevent zoom-on-interaction (iOS) ──────────────────
+     Three separate iOS behaviours cause unwanted zoom/selection while
+     scoring, and each needs its own fix:
+       1. Double-tap-to-zoom — the browser delays every tap to watch for a
+          second one. touch-action:manipulation removes the double-tap gesture
+          (keeps scroll + pinch), which also kills the 300ms tap delay.
+       2. Long-press text selection + the grey callout — user-select:none on
+          the chrome. Left ON for actual text inputs so the user can edit.
+       3. The grey tap flash — -webkit-tap-highlight-color transparent.
+     Input font-size stays >= 16px elsewhere so focus never zooms either.
+
+     Applied broadly to every tappable surface via one rule rather than a
+     hand-maintained class list (which missed .mini-pad, .bd-cell, nav
+     buttons, etc). The whole app shell is non-selectable chrome; text inputs
+     opt back in below. */
+  button,
+  a,
+  label,
+  [role="button"],
+  [data-act],
+  [data-tab],
+  [onclick],
+  nav.tabs button,
+  .pref-chip, .par-chip, .cr-btn, .cr-hole, .cr-par, .cr-yd-val,
+  .tot-action, .settings-btn, .nine-new-btn,
+  .mini-pad, .bd-cell, .lr-score,
+  .date-btn, .cal-day, .cal-nav {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* The whole scoring surface: block double-tap zoom without blocking scroll
+     or a deliberate pinch. Safe because scoring is all taps, never gestures. */
+  .device {
+    touch-action: manipulation;
+  }
+
+  /* Text inputs keep selection + the caret; they're already >= 16px so
+     focusing them doesn't zoom. */
+  input[type="text"], input[type="number"], textarea {
+    -webkit-user-select: text;
+    user-select: text;
+    touch-action: manipulation;
+  }
 
   /* Visually hidden — for crawlers and screen readers, never seen. */
   .sr-only {
@@ -3621,7 +3675,58 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   let selected = { front: 1, back: 10 };  // active hole per nine
   let viewingSavedId = null;  // when viewing a saved-round detail, this is its id
 
-  // ── STORAGE ───────────────────────────────────────
+  // ── PRESS-AND-HOLD ────────────────────────────────
+  // Turns a stepper button into tap = one step, hold = repeat with
+  // acceleration. Uses pointer events so mouse and touch behave identically.
+  // A plain tap still fires exactly one step (the repeat only starts after a
+  // hold delay), so existing tap behaviour is unchanged.
+  //
+  //   step(fast) -> perform one increment. `fast` is true once the hold has
+  //                 accelerated, so callers can jump by a larger amount.
+  //
+  // Timing: 400ms before the first repeat, then the interval ramps from 140ms
+  // down to 40ms over ~1.5s, and `fast` flips true after ~1.2s so long holds
+  // cover big distances (yardage) without feeling twitchy on a short press.
+  function pressAndHold(btn, step) {
+    if (!btn) return;
+    let holdTimer = null, repeatTimer = null, held = false, elapsed = 0;
+
+    const clear = () => {
+      clearTimeout(holdTimer);
+      clearInterval(repeatTimer);
+      holdTimer = repeatTimer = null;
+      held = false;
+      elapsed = 0;
+    };
+
+    const startRepeat = () => {
+      held = true;
+      const tick = () => {
+        elapsed += 1;
+        step(elapsed > 8);                 // ~1.2s in -> fast mode (bigger jumps)
+        const interval = Math.max(40, 140 - elapsed * 12);  // ramp 140 -> 40ms
+        clearInterval(repeatTimer);
+        repeatTimer = setInterval(run, interval);
+      };
+      const run = () => tick();
+      repeatTimer = setInterval(run, 140);
+    };
+
+    btn.addEventListener('pointerdown', (e) => {
+      // Left button / touch only; ignore right-click.
+      if (e.button && e.button !== 0) return;
+      e.preventDefault();
+      btn.setPointerCapture?.(e.pointerId);
+      step(false);                         // the immediate tap
+      holdTimer = setTimeout(startRepeat, 400);
+    });
+
+    // End the hold on release, leave, or cancel — every path clears timers.
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev =>
+      btn.addEventListener(ev, clear));
+  }
+
+
   // Persistent storage via window.storage. All saves are async + try/catch.
   // Keys are hierarchical: fore:round (single active round), fore:saved (array).
   const STORAGE_KEYS = {
@@ -3740,10 +3845,11 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   function scoreClass(score, par) {
     if (score == null) return 'empty';
     const d = score - par;
-    if (d <= -1) return 'birdie';
-    if (d === 0) return '';
-    if (d === 1) return 'bogey';
-    return 'dbogey';
+    if (d <= -2) return 'eagle';     // eagle or better → double circle
+    if (d === -1) return 'birdie';   // single circle
+    if (d === 0) return '';          // par → no mark
+    if (d === 1) return 'bogey';     // single square
+    return 'dbogey';                 // double bogey or worse → double square
   }
   function relLabel(score, par) {
     if (score == null) return '—';
@@ -3811,15 +3917,16 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     }
     const strokeVal = h.strokes != null ? h.strokes : h.par;
     const isPar3 = h.par === 3;
-    const nextHoleNum = h.hole + 1;
     const isLastHole = h.hole === 18;
-    // Label has to tell the truth about what the button does. With auto-advance
-    // off it saves and stays put, so promising "Hole 9 →" would be a lie.
+    // The number names the hole you're SAVING (the current one), not the one
+    // you're advancing to — "Save · Hole 9 →" while sitting on hole 8 read as
+    // if you were saving hole 9. With auto-advance the arrow signals the jump;
+    // with it off, no arrow, since the button saves and stays put.
     const nextBtnLabel = isLastHole
-      ? 'Save · Finish round'
+      ? `Save Hole ${h.hole} · Finish`
       : prefs.autoAdvance
-        ? `Save · Hole ${nextHoleNum} →`
-        : 'Save hole';
+        ? `Save Hole ${h.hole} · Next →`
+        : `Save Hole ${h.hole}`;
 
     detailEl.innerHTML = `
       <div class="detail-body">
@@ -3838,7 +3945,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
               <div class="dt-stepper-label">${unitLong()}</div>
               <div class="dt-stepper-row">
                 <button class="dt-stepper-btn" data-act="yds-minus">−</button>
-                <div class="dt-stepper-val ${h.yards ? '' : 'placeholder'}">${h.yards ? toDisp(h.yards) : '—'}</div>
+                <div class="dt-stepper-val dt-yards-val ${h.yards ? '' : 'placeholder'}">${h.yards ? toDisp(h.yards) : '—'}</div>
                 <button class="dt-stepper-btn" data-act="yds-plus">+</button>
               </div>
             </div>
@@ -3904,6 +4011,28 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
         <button class="detail-next" data-act="next">${nextBtnLabel}</button>
       </div>
     `;
+
+    // Press-and-hold on the yardage steppers. Updates the value in place (and
+    // the live scorecard) rather than calling rerenderAll(), which would
+    // rebuild these very buttons mid-hold and drop the press. A single tap
+    // still commits one step. par/strokes stay on the delegated click handler
+    // — those move in small fixed ranges where holding adds nothing.
+    const yVal = detailEl.querySelector('.dt-yards-val');
+    const stepYards = (dir, fast) => {
+      const seedYards = h.par === 3 ? 145 : h.par === 5 ? 480 : 380;
+      const cur = toDisp(h.yards != null ? h.yards : seedYards);
+      const amt = fast ? 25 : 5;
+      const next = dir > 0 ? cur + amt : Math.max(toDisp(YD_MIN), cur - amt);
+      h.yards = fromDisp(next);
+      if (yVal) {
+        yVal.textContent = toDisp(h.yards);
+        yVal.classList.remove('placeholder');
+      }
+      renderTot();          // keep the live scorecard in sync, cheap
+      persistRound();
+    };
+    pressAndHold(detailEl.querySelector('[data-act="yds-plus"]'),  (fast) => stepYards(1, fast));
+    pressAndHold(detailEl.querySelector('[data-act="yds-minus"]'), (fast) => stepYards(-1, fast));
   }
 
   // ── RENDER: TOT (live scorecard) ──────────────────
@@ -4823,18 +4952,8 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     }
     if (act === 'par-plus') { h.par = h.par >= 5 ? 3 : h.par + 1; rerenderAll(); return; }
     if (act === 'par-minus') { h.par = h.par <= 3 ? 5 : h.par - 1; rerenderAll(); return; }
-    // Distance steppers move by 5 in whatever unit is on screen, then convert
-    // back to yards for storage. Stepping the stored yards by 5 would make the
-    // metres display jump by an ugly 4.57 and round inconsistently.
-    if (act === 'yds-plus' || act === 'yds-minus') {
-      const seedYards = h.par === 3 ? 145 : h.par === 5 ? 480 : 380;
-      const curDisp = toDisp(h.yards != null ? h.yards : seedYards);
-      const nextDisp = act === 'yds-plus'
-        ? curDisp + 5
-        : Math.max(toDisp(50), curDisp - 5);
-      h.yards = fromDisp(nextDisp);
-      rerenderAll(); return;
-    }
+    // Yardage steppers are handled by pressAndHold() in renderDetail (tap +
+    // hold-to-repeat), updating in place instead of a full rerender.
     if (act === 'record-par') {
       h.strokes = h.par;
       rerenderAll(); return;
@@ -5008,7 +5127,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
   // Decoupling from par means changing par doesn't disturb the yards slider.
   // The seed (used when user first nudges an empty cell) still varies by par
   // since that's a one-time first-touch heuristic, not a range constraint.
-  const YD_MIN = 80;
+  const YD_MIN = 40;
   const YD_MAX = 650;
   const yardSeedFor = (p) => p === 3 ? 145 : p === 5 ? 510 : 380;
 
@@ -5071,17 +5190,19 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       });
 
       // ± nudge, in display units. Updates value, slider, totals — no full re-render.
-      const nudge = (dir) => {
+      const nudge = (dir, fast) => {
         const curYards = setupYards[i] != null ? setupYards[i] : yardSeedFor(setupPars[i]);
-        const nextDisp = toDisp(curYards) + dir * 5;
+        const step = fast ? 25 : 5;        // hold long enough -> jump by 25
+        const nextDisp = toDisp(curYards) + dir * step;
         const clamped = Math.min(toDisp(YD_MAX), Math.max(toDisp(YD_MIN), nextDisp));
         setupYards[i] = fromDisp(clamped);
         slider.value = clamped;
         paint();
         updateTotalsRow();
       };
-      row.querySelector('[data-act="yd-plus"]').addEventListener('click', () => nudge(1));
-      row.querySelector('[data-act="yd-minus"]').addEventListener('click', () => nudge(-1));
+      // Tap = one step; hold = repeat with acceleration.
+      pressAndHold(row.querySelector('[data-act="yd-plus"]'),  (fast) => nudge(1, fast));
+      pressAndHold(row.querySelector('[data-act="yd-minus"]'), (fast) => nudge(-1, fast));
 
       parGrid.appendChild(row);
     }
