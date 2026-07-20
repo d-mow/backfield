@@ -548,7 +548,7 @@ const STAT_GROUPS = [
 const STAT_KEYS = STAT_GROUPS.flatMap(g => g.keys.map(k => k[0]));
 const emptyStatLine = () => STAT_KEYS.reduce((o, k) => (o[k] = 0, o), {});
 function App() {
-  const [tab, setTab] = useState("lineup");
+  const [tab, setTab] = useState("score");
   const [showInfo, setShowInfo] = useState(false);
   const [roster, setRoster] = useState([]);
   const [lineup, setLineup] = useState([]); // array of player ids in batting order
@@ -803,7 +803,8 @@ function App() {
       date: ""
     });
     setConfirmFinalize(false);
-    setTab("records");
+    setTab("summary");
+    setStatsView("log");
   };
 
   // Save snapshot without resetting — for the Game tab "Save to Log" button.
@@ -1873,26 +1874,23 @@ function App() {
   })))), /*#__PURE__*/React.createElement("div", {
     className: "flex border-t border-c-700"
   }, [{
+    k: "score",
+    l: "Score"
+  }, {
     k: "lineup",
     l: "Bat"
   }, {
     k: "field",
     l: "Field"
   }, {
-    k: "score",
-    l: "Score"
-  }, {
     k: "pitch",
     l: "Pitch"
-  }, {
-    k: "roster",
-    l: "Team"
   }, {
     k: "summary",
     l: "Game"
   }, {
-    k: "records",
-    l: "Log"
+    k: "roster",
+    l: "Team"
   }].map(t => /*#__PURE__*/React.createElement("button", {
     key: t.k,
     onClick: () => setTab(t.k),
@@ -2309,25 +2307,72 @@ function App() {
     className: "w-5 h-5"
   }))), roster.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "text-center text-c-400 text-sm uppercase tracking-widest py-8"
-  }, "No players yet"), roster.map(p => /*#__PURE__*/React.createElement("div", {
+  }, "No players yet"), roster.map(p => editingPlayerId === p.id ?
+  /*#__PURE__*/
+  /* Edit mode — inline fields, same shape as the add-player row */
+  React.createElement("div", {
+    key: p.id,
+    className: "py-3 border-b border-c-200"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2 mb-2"
+  }, /*#__PURE__*/React.createElement("input", {
+    value: p.num || "",
+    onChange: e => updatePlayer(p.id, {
+      num: e.target.value.replace(/[^0-9]/g, "").slice(0, 2)
+    }),
+    inputMode: "numeric",
+    placeholder: "#",
+    className: "w-16 h-12 text-center text-base bg-c-100 border-2 border-c-300 rounded"
+  }), /*#__PURE__*/React.createElement("input", {
+    value: p.first || "",
+    onChange: e => updatePlayer(p.id, {
+      first: e.target.value
+    }),
+    placeholder: "First",
+    className: "flex-1 min-w-0 h-12 px-3 text-base bg-c-100 border-2 border-c-300 rounded"
+  }), /*#__PURE__*/React.createElement("input", {
+    value: p.last || "",
+    onChange: e => updatePlayer(p.id, {
+      last: e.target.value
+    }),
+    placeholder: "Last",
+    className: "flex-1 min-w-0 h-12 px-3 text-base bg-c-100 border-2 border-c-300 rounded"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setEditingPlayerId(null),
+    className: "flex-1 h-10 bg-c-900 text-c-50 rounded text-[10px] uppercase tracking-widest font-bold"
+  }, "Done"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      removePlayer(p.id);
+      setEditingPlayerId(null);
+    },
+    className: "px-4 h-10 bg-c-50 border-2 border-c-300 rounded text-[10px] uppercase tracking-widest text-c-500 flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement(Trash2, {
+    className: "w-3.5 h-3.5"
+  }), " Remove"))) :
+  /*#__PURE__*/
+  /* Display mode — tap anywhere on the row to edit */
+  React.createElement("div", {
     key: p.id,
     className: "flex items-center gap-3 py-3 border-b border-c-200"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setEditingPlayerId(p.id),
+    className: "flex items-center gap-3 flex-1 min-w-0 text-left"
   }, /*#__PURE__*/React.createElement("div", {
     className: "display text-2xl w-10 text-center text-c-700"
   }, p.num || "—"), /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 text-sm truncate"
+    className: "flex-1 min-w-0 text-sm truncate"
   }, /*#__PURE__*/React.createElement("span", {
     className: "font-semibold"
   }, p.first || p.name), p.last && /*#__PURE__*/React.createElement("span", {
     className: "text-c-500"
-  }, " ", p.last)), /*#__PURE__*/React.createElement("div", {
+  }, " ", p.last))), /*#__PURE__*/React.createElement("div", {
     className: "text-xs text-c-500 uppercase"
   }, field[p.id] || ""), /*#__PURE__*/React.createElement("button", {
-    onClick: () => removePlayer(p.id),
-    className: "w-8 h-8 flex items-center justify-center text-c-400"
-  }, /*#__PURE__*/React.createElement(X, {
-    className: "w-4 h-4"
-  })))), roster.length > 0 && /*#__PURE__*/React.createElement("div", {
+    onClick: () => setEditingPlayerId(p.id),
+    className: "text-[10px] uppercase tracking-widest text-c-400 px-2"
+  }, "Edit"))), roster.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mt-10 mb-6"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-[10px] uppercase tracking-widest text-c-500 mb-2"
@@ -2418,6 +2463,18 @@ function App() {
     return /*#__PURE__*/React.createElement("div", {
       className: "px-4 pt-4"
     }, /*#__PURE__*/React.createElement("div", {
+      className: "flex gap-2 mb-4"
+    }, [{
+      k: "game",
+      l: "This Game"
+    }, {
+      k: "log",
+      l: "Log"
+    }].map(v => /*#__PURE__*/React.createElement("button", {
+      key: v.k,
+      onClick: () => setStatsView(v.k),
+      className: `flex-1 h-10 rounded text-[10px] uppercase tracking-widest font-semibold border-2 ${statsView === v.k ? "bg-c-900 text-c-50 border-c-900" : "bg-c-50 text-c-500 border-c-300"}`
+    }, v.l))), statsView === "game" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       className: "bg-c-900 text-c-50 rounded-lg p-4 mb-4"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex justify-between items-center mb-2"
@@ -2530,9 +2587,9 @@ function App() {
         setConfirmClearGame(false);
       },
       className: "h-11 bg-c-900 text-c-50 rounded text-xs uppercase tracking-widest font-semibold"
-    }, "Clear")))));
-  })(), tab === "records" && /*#__PURE__*/React.createElement("div", {
-    className: "px-4 pt-4"
+    }, "Clear"))))));
+  })(), tab === "summary" && statsView === "log" && /*#__PURE__*/React.createElement("div", {
+    className: "px-4"
   }, (() => {
     const w = savedGames.filter(g => g.result === "W").length;
     const l = savedGames.filter(g => g.result === "L").length;
