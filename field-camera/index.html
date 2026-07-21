@@ -83,6 +83,8 @@
 
   /* settings overlay — opens BELOW the header so the mark button stays visible top-right */
   .settings { position: absolute; top: var(--header-h); left: 0; right: 0; bottom: 0; z-index: 45; background: var(--bg); display: none; flex-direction: column; }
+  /* opened from within Settings, so it must sit above it */
+  #howSheet { z-index: 48; }
   .settings.active { display: flex; }
   .set-head { display: flex; align-items: center;
     padding: 14px 20px 12px; border-bottom: 1px solid var(--line); }
@@ -104,6 +106,26 @@
   .set-row2 .mini svg { width: 14px; height: 14px; }
   .set-hint { font-family: var(--mono); font-size: 10px; line-height: 1.6; color: var(--ink-mid); margin-top: 10px; }
   .set-meta { font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-dim); }
+  .set-input { width: 100%; background: none; border: 1px solid var(--line); border-radius: 2px;
+    padding: 12px 14px; color: var(--ink); font-family: var(--mono);
+    font-size: 16px; /* 16px minimum — smaller makes iOS zoom on focus */ }
+  .set-input::placeholder { color: var(--ink-dim); }
+  .set-input:focus { outline: none; border-color: var(--ink-mid); }
+  .mini.wide { width: 100%; text-align: center; padding: 13px; }
+  .bf-link { display: inline-block; margin-top: 10px; font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink);
+    border-bottom: 1px solid var(--line); padding-bottom: 3px; text-decoration: none; }
+  .bf-link:active { border-color: var(--ink); }
+  /* how it works */
+  .how-step { display: grid; grid-template-columns: 30px 1fr; gap: 12px; padding: 14px 0;
+    border-bottom: 1px solid var(--line-soft); }
+  .how-step:last-of-type { border-bottom: none; }
+  .how-step .n { font-family: var(--display); font-weight: 800; font-stretch: 125%;
+    font-size: 12px; color: var(--ink-dim); padding-top: 2px; }
+  .how-step b { font-family: var(--mono); font-size: 12px; display: block; margin-bottom: 4px; }
+  .how-step p { font-family: var(--mono); font-size: 10px; line-height: 1.6; color: var(--ink-mid); margin: 0; }
+  .how-note { margin-top: 18px; padding: 14px; border: 1px dashed var(--line);
+    font-family: var(--mono); font-size: 10px; line-height: 1.6; color: var(--ink-mid); }
 
   /* print options toggles */
   .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--line-soft); }
@@ -187,6 +209,16 @@
     font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
     color: var(--ink); padding: 11px 14px; min-width: 92px; text-align: center; transition: border-color 0.15s; }
   .ctrl-btn:hover { border-color: var(--ink-mid); }
+  .right-pair { display: flex; flex-direction: column; gap: 6px; }
+  .ctrl-btn.slim { min-width: 78px; padding: 7px 10px; font-size: 9px; }
+  /* camera asleep: dim the finder and say so */
+  body.cam-off .finder { background: #000; }
+  body.cam-off #video { opacity: 0; }
+  body.cam-off .reticle, body.cam-off .flash { opacity: 0; }
+  .cam-msg { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--ink-dim); z-index: 6; pointer-events: none; }
+  body.cam-off .cam-msg { display: flex; }
   .ctrl-btn:disabled { opacity: 0.35; }
   .ctrl-btn .num { font-size: 12px; }
   .shutter { width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--ink); background: var(--ink); position: relative; flex-shrink: 0; transition: transform 0.08s; }
@@ -205,11 +237,30 @@
     color: var(--ink); opacity: 0; transition: 0.25s; pointer-events: none; white-space: normal; max-width: min(88vw, 360px); text-align: center; line-height: 1.4; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .toast b { color: var(--accent); }
+  .toast.has-action { pointer-events: auto; }
+  .toast-undo { background: none; border: 1px solid var(--line); border-radius: 2px; color: var(--ink);
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 5px 10px; margin-left: 4px; }
+  /* trash list */
+  .trash-row { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--line-soft); }
+  .trash-row:last-child { border-bottom: none; }
+  .trash-row .tinfo { font-family: var(--mono); font-size: 11px; }
+  .trash-row .tinfo small { display: block; font-size: 9px; color: var(--ink-dim); margin-top: 2px;
+    letter-spacing: 0.1em; }
+  .trash-row .mini { padding: 7px 12px; font-size: 9px; }
+  .trash-empty { font-family: var(--mono); font-size: 10px; color: var(--ink-mid); line-height: 1.6; }
 
   /* PERMISSION GATE */
   .gate { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column;
     align-items: center; justify-content: center; text-align: center; padding: 32px; background: var(--bg); }
   .gate p { color: var(--ink-mid); font-size: 12px; line-height: 1.7; max-width: 280px; margin-bottom: 28px; }
+  .gate .g-input { width: min(280px, 76vw); margin-bottom: 18px; background: none; border: 1px solid var(--line);
+    border-radius: 2px; padding: 12px 14px; color: var(--ink); font-family: var(--mono);
+    font-size: 16px; /* 16px minimum — anything smaller makes iOS zoom on focus */
+    text-align: center; }
+  .gate .g-input::placeholder { color: var(--ink-dim); font-size: 13px; letter-spacing: 0.08em; }
+  .gate .g-input:focus { outline: none; border-color: var(--ink-mid); }
   .gate .g-btn { border: 1px solid var(--ink); border-radius: 2px; padding: 14px 28px; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; background: var(--ink); color: var(--bg); }
   .gate .g-btn:active { transform: scale(0.97); }
 
@@ -220,6 +271,12 @@
     display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
   .map-head .mh-title { font-family: var(--display); font-weight: 800; font-stretch: 125%; font-size: 16px; line-height: 1; letter-spacing: -0.01em; text-transform: uppercase; }
   .map-head .mh-actions { display: flex; gap: 8px; }
+  .zoomers { display: flex; gap: 6px; margin-right: auto; margin-left: 14px; }
+  .zbtn { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 2px; background: none;
+    color: var(--ink); font-family: var(--mono); font-size: 14px; line-height: 1; display: flex;
+    align-items: center; justify-content: center; transition: border-color .15s, opacity .15s; }
+  .zbtn:active { border-color: var(--ink); }
+  .zbtn:disabled { opacity: 0.3; }
   .ctrl-btn.primary { border-color: var(--accent); background: var(--accent); color: #0c0c0d; }
   .style-bar { display: flex; border-bottom: 1px solid var(--line); }
   .style-seg { flex: 1; background: none; border: none; border-right: 1px solid var(--line);
@@ -303,10 +360,12 @@
         <div class="deg"><b id="degVal">—</b><s id="degCard">no fix</s></div>
       </div>
     </div>
+    <div class="cam-msg">Camera asleep — tap Wake</div>
     <div class="flash" id="flash"></div>
     <div class="toast" id="toast"></div>
     <div class="gate" id="gate">
       <p>Records exactly where you stood and which way you faced. Enable camera, location, and compass — iOS asks for each.</p>
+      <input class="g-input" id="gateProject" type="text" placeholder="Project name (optional)" maxlength="60" autocomplete="off" autocapitalize="words">
       <button class="g-btn" id="gateBtn">Enable</button>
     </div>
   </div>
@@ -314,12 +373,19 @@
   <div class="controls no-print">
     <button class="ctrl-btn" id="mapBtn" disabled>Map <span class="num">(0)</span></button>
     <button class="shutter" id="shutter" aria-label="Capture"></button>
-    <button class="ctrl-btn" id="flipBtn">Flip</button>
+    <div class="right-pair">
+      <button class="ctrl-btn slim" id="flipBtn">Flip</button>
+      <button class="ctrl-btn slim" id="camBtn">Sleep</button>
+    </div>
   </div>
 
   <div class="map-view no-print" id="mapView">
     <div class="map-head">
       <div class="mh-title">Captures</div>
+      <div class="zoomers">
+        <button class="zbtn" id="zoomOut" aria-label="Zoom out">&minus;</button>
+        <button class="zbtn" id="zoomIn" aria-label="Zoom in">+</button>
+      </div>
       <div class="mh-actions">
         <button class="ctrl-btn" id="closeMapBtn">Close</button>
       </div>
@@ -331,7 +397,7 @@
     </div>
     <div class="map-container"><canvas id="mapCanvas"></canvas></div>
     <div class="shot-info" id="shotInfo">
-      <div><div class="label">Tap a pin</div><div class="v small">—</div></div>
+      <div><div class="label">Tap a pin</div><div class="v small">review or delete</div></div>
     </div>
   </div>
 
@@ -349,12 +415,38 @@
     </div>
   </div>
 
+  <!-- how it works -->
+  <div class="settings no-print" id="howSheet">
+    <div class="set-head"><div class="st">How it works</div></div>
+    <div class="set-body">
+      <div class="how-step"><span class="n">01</span><div><b>Name the project</b>
+        <p>Optional, but it labels the printed sheet and your exports. Set it on the opening screen or here in Settings.</p></div></div>
+      <div class="how-step"><span class="n">02</span><div><b>Point and shoot</b>
+        <p>Every photo is saved with its GPS position and compass bearing burned into the image, plus a running number — field-001, field-002 — that never resets.</p></div></div>
+      <div class="how-step"><span class="n">03</span><div><b>Save to your phone</b>
+        <p>iOS opens the share sheet after each shot. Tap Save Image to put it in your camera roll. If you cancel, the capture still stays on the map.</p></div></div>
+      <div class="how-step"><span class="n">04</span><div><b>Check the map</b>
+        <p>Every located capture appears as a numbered pin with a cone showing which way you faced. The number on the pin is the number on the photo. Tap a pin to review or delete it.</p></div></div>
+      <div class="how-step"><span class="n">05</span><div><b>Sleep the camera</b>
+        <p>Walking between shots? Tap Sleep to switch the camera off and save battery. Position and bearing keep tracking, so you're ready the moment you wake it.</p></div></div>
+      <div class="how-step"><span class="n">06</span><div><b>Print or export</b>
+        <p>Settings &rsaquo; Print gives you the map, a table of coordinates and bearings, and a contact sheet of the photos — preview it before printing. Settings &rsaquo; Data exports a JSON backup or a CSV.</p></div></div>
+      <div class="how-note">Everything stays on your device. No account, no cloud. Back up from Settings &rsaquo; Data if a set matters — phones can clear browser storage if the app sits unused for a long time.</div>
+      <button class="mini wide" id="howDone" style="margin-top:22px">Done</button>
+    </div>
+  </div>
+
   <!-- settings overlay (Fore/Folio pattern) -->
   <div class="settings no-print" id="settings">
     <div class="set-head">
       <div class="st">Settings</div>
     </div>
     <div class="set-body">
+      <div class="set-sec">
+        <div class="h">Project</div>
+        <input class="set-input" id="projInput" type="text" placeholder="Untitled survey" maxlength="60" autocomplete="off" autocapitalize="words">
+        <div class="set-hint">Named on the printed sheet and in exports. Change it any time — it applies to the whole set, not individual captures.</div>
+      </div>
       <div class="set-sec">
         <div class="h">Theme</div>
         <div class="swatches" id="swatches"></div>
@@ -385,13 +477,22 @@
         <div class="set-hint">JSON is the full backup — the whole workspace (captures + settings) in one file, restored through the same load path. CSV is a spreadsheet deliverable. Photos aren't in the backup; they save to your device on capture.</div>
       </div>
       <div class="set-sec">
+        <div class="h">Deleted</div>
+        <div id="trashList"></div>
+      </div>
+      <div class="set-sec">
         <div class="h">Danger</div>
         <div id="clearWrap"><button class="mini" id="clearBtn">Clear all captures</button></div>
         <div class="set-hint">Removes the map history and resets numbering. Photos already saved to your device are not affected.</div>
       </div>
       <div class="set-sec">
+        <div class="h">Help</div>
+        <button class="mini wide" id="howBtn">How Field Camera works</button>
+      </div>
+      <div class="set-sec">
         <div class="h">About</div>
-        <div class="set-meta">Field Camera. · Backfield · 2026</div>
+        <div class="set-meta">Field Camera. · 2026</div>
+        <a class="bf-link" href="https://backfield.io" target="_blank" rel="noopener">Built by Backfield.io &rarr;</a>
       </div>
     </div>
   </div>
@@ -415,10 +516,13 @@ const STATE_KEY = 'fieldcam:state';   // { v, shots, nextSeq, settings }
 const LEGACY_THUMBS_KEY = 'fieldcam:thumbs'; // pre-Batch-2 localStorage thumbs (migrated to IDB on load)
 const SCHEMA_V = 1;
 
-let shots = [], nextSeq = 1;
+let shots = [], trash = [], nextSeq = 1;
 let loaded = false;
 // settings live in state.settings but are mirrored to these vars the app already uses
 let currentStyle = 'cyclosm', theme = '', printOpts = { map: true, table: true, photos: false };
+let zoomOffset = 0;   // user zoom nudge on top of the auto-fit (-2..+2)
+let projectName = '';  // optional label for the survey, shown on print
+const ZOOM_MIN = -2, ZOOM_MAX = 2;
 
 // ── photo thumbnails live in IndexedDB (media, no 5MB cliff) — dataURLs, not Blobs (iOS) ──
 const IDB_NAME = 'fieldcam', IDB_STORE = 'thumbs';
@@ -479,8 +583,12 @@ function normalize(raw) {
   // --- fill every default; migrate every record ---
   s.v = SCHEMA_V;
   s.shots = Array.isArray(s.shots) ? s.shots.map(normShot).filter(Boolean) : [];
-  // counter is monotonic and never below the highest seq ever issued
-  const maxSeq = s.shots.reduce((m, x) => Math.max(m, x.seq || 0), 0);
+  s.trash = Array.isArray(s.trash) ? s.trash.map(normShot).filter(Boolean) : [];
+  // Counter is monotonic and must clear BOTH live and trashed seqs — a restored
+  // capture keeps its original number, so that number can never be reissued.
+  const maxLive = s.shots.reduce((m, x) => Math.max(m, x.seq || 0), 0);
+  const maxGone = s.trash.reduce((m, x) => Math.max(m, x.seq || 0), 0);
+  const maxSeq = Math.max(maxLive, maxGone);
   s.nextSeq = Math.max(Number.isFinite(s.nextSeq) ? s.nextSeq : 1, maxSeq + 1, 1);
   const set = (s.settings && typeof s.settings === 'object') ? s.settings : {};
   s.settings = {
@@ -490,7 +598,9 @@ function normalize(raw) {
       map:    set.printOpts ? set.printOpts.map    !== false : true,
       table:  set.printOpts ? set.printOpts.table  !== false : true,
       photos: set.printOpts ? set.printOpts.photos === true  : false
-    }
+    },
+    zoomOffset: Math.max(-2, Math.min(2, Number.isFinite(set.zoomOffset) ? Math.round(set.zoomOffset) : 0)),
+    projectName: (typeof set.projectName === 'string' ? set.projectName : '').slice(0, 60)
   };
   return s;
 }
@@ -500,6 +610,7 @@ function normShot(r) {
     ? { lat: r.position.lat, lng: r.position.lng, alt: (r.position.alt != null ? r.position.alt : null) } : null;
   return {
     seq: r.seq,
+    prefix: (typeof r.prefix === 'string' && r.prefix) ? r.prefix.slice(0, 32) : 'field',
     position: pos,
     heading: Number.isFinite(r.heading) ? r.heading : null,
     accuracy: Number.isFinite(r.accuracy) ? r.accuracy : null,
@@ -511,8 +622,9 @@ function load() {
   try { raw = JSON.parse(localStorage.getItem(STATE_KEY)); } catch (e) {}
   const state = normalize(raw);
   // hydrate the vars the app uses
-  shots = state.shots; nextSeq = state.nextSeq;
+  shots = state.shots; trash = state.trash; nextSeq = state.nextSeq;
   currentStyle = state.settings.mapStyle; theme = state.settings.theme; printOpts = state.settings.printOpts;
+  zoomOffset = state.settings.zoomOffset; projectName = state.settings.projectName;
   save(state);            // write the migrated shape back
   // one-time: clear the old scattered keys now that they're folded in
   try { ['fieldcam.shots','fieldcam.nextSeq','fieldcam.mapStyle','fieldcam.theme','fieldcam.printOpts','fieldcam.thumbs']
@@ -529,7 +641,7 @@ function load() {
   return state;
 }
 function currentState() {
-  return { v: SCHEMA_V, shots, nextSeq, settings: { mapStyle: currentStyle, theme, printOpts } };
+  return { v: SCHEMA_V, shots, trash, nextSeq, settings: { mapStyle: currentStyle, theme, printOpts, zoomOffset, projectName } };
 }
 function save(state) {
   try { localStorage.setItem(STATE_KEY, JSON.stringify(state || currentState())); return true; }
@@ -555,6 +667,8 @@ function lonLatToTile(lon, lat, z) {
   return { x, y };
 }
 // Keyless OSM raster styles. Each builds a tile URL and carries its attribution.
+const SUB = ['a', 'b', 'c'];
+const pick = (x, y) => SUB[(x + y) % 3];
 const STYLES = {
   carto: {
     name: 'OSM Carto',
@@ -564,13 +678,13 @@ const STYLES = {
   },
   hot: {
     name: 'Humanitarian',
-    url: (z, x, y) => `https://a.tile.openstreetmap.fr/hot/${z}/${x}/${y}.png`,
+    url: (z, x, y) => `https://${pick(x, y)}.tile.openstreetmap.fr/hot/${z}/${x}/${y}.png`,
     attrShort: 'HOT · © OpenStreetMap',
     attrFull: 'Humanitarian OSM Team · © OpenStreetMap contributors'
   },
   cyclosm: {
     name: 'CyclOSM',
-    url: (z, x, y) => `https://a.tile-cyclosm.openstreetmap.fr/cyclosm/${z}/${x}/${y}.png`,
+    url: (z, x, y) => `https://${pick(x, y)}.tile-cyclosm.openstreetmap.fr/cyclosm/${z}/${x}/${y}.png`,
     attrShort: 'CyclOSM · © OpenStreetMap',
     attrFull: 'CyclOSM · © OpenStreetMap contributors'
   }
@@ -584,13 +698,14 @@ function loadTile(z, x, y) {
   const p = new Promise((res, rej) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => res(img);
-    img.onerror = () => rej(new Error('tile ' + key));
+    img.onload = () => { tilesOK++; res(img); };
+    img.onerror = () => { tilesFailed++; tileCache.delete(key); rej(new Error('tile ' + key)); };
     img.src = STYLES[currentStyle].url(z, x, y);
   });
   tileCache.set(key, p);
   return p;
 }
+let tilesOK = 0, tilesFailed = 0;
 async function renderTilesTo(ctx, dx, dy, dw, dh, lat, lng, zoom) {
   const c = lonLatToTile(lng, lat, zoom);
   const hw = dw / 2 / TILE, hh = dh / 2 / TILE;
@@ -605,6 +720,8 @@ async function renderTilesTo(ctx, dx, dy, dw, dh, lat, lng, zoom) {
       proms.push(loadTile(zoom, wx, ty).then(img => ({ img, tx, ty })).catch(() => null));
     }
   const tiles = await Promise.all(proms);
+  const got = tiles.filter(Boolean).length;
+  renderTilesTo._lastResult = { requested: tiles.length, got };
   ctx.save(); ctx.beginPath(); ctx.rect(dx, dy, dw, dh); ctx.clip();
   for (const t of tiles) {
     if (!t) continue;
@@ -690,24 +807,30 @@ function compassHandler(e) {
   let h = null;
   if (e.webkitCompassHeading != null) h = e.webkitCompassHeading;
   else if (e.alpha != null) h = (360 - e.alpha) % 360;
-  if (h != null) {
-    compassOn = true;
+  if (h != null && !isNaN(h)) {
+    compassOn = true;          // only true once a REAL reading lands
+    clearTimeout(compassWatchdog);
     h = (h + getScreenAngle()) % 360;
     if (h < 0) h += 360;
     setHeading(h);
   }
 }
-let compassOn = false;
-async function startCompass() {
+let compassOn = false, compassWatchdog = null;
+async function startCompass(orientPromise) {
   try {
     if (typeof DeviceOrientationEvent !== 'undefined' &&
         typeof DeviceOrientationEvent.requestPermission === 'function') {
-      const res = await DeviceOrientationEvent.requestPermission();
+      // Use the promise created inside the tap handler when available; only request
+      // here for the compass-tap retry path (which is itself a fresh user gesture).
+      const res = await (orientPromise || DeviceOrientationEvent.requestPermission());
       if (res !== 'granted') { showCompassBlocked(); return; }
     }
     window.addEventListener('deviceorientationabsolute', compassHandler, true);
     window.addEventListener('deviceorientation', compassHandler, true);
-    compassOn = true;
+    // Listeners attached != data flowing. If nothing arrives, say so instead of
+    // silently recording every capture with no bearing.
+    clearTimeout(compassWatchdog);
+    compassWatchdog = setTimeout(() => { if (!compassOn) showCompassBlocked(); }, 2000);
   } catch (e) { showCompassBlocked(); }
 }
 function showCompassBlocked() {
@@ -720,6 +843,25 @@ function showCompassBlocked() {
 })();
 
 // ── camera ──
+
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  video.srcObject = null;
+  cameraOn = false;
+  $('statusText').textContent = 'camera off';
+  document.body.classList.add('cam-off');
+  $('shutter').disabled = true;
+  $('camBtn').textContent = 'Wake';
+}
+async function resumeCamera() {
+  cameraOn = true;
+  document.body.classList.remove('cam-off');
+  $('statusText').textContent = 'recording';
+  $('camBtn').textContent = 'Sleep';
+  await startCamera();
+  $('shutter').disabled = false;
+}
+let cameraOn = true;
 
 async function startCamera() {
   if (stream) stream.getTracks().forEach(t => t.stop());
@@ -736,15 +878,30 @@ async function startCamera() {
 // ── init (permission gate) ──
 
 // ── init (permission gate) ──
-async function init() {
+async function init(orientPromise) {
   $('gate').style.display = 'none';
   $('statusText').textContent = 'recording';
+  const compassReady = startCompass(orientPromise);
   await startCamera();
   startGeolocation();
-  await startCompass();
+  await compassReady;
   $('shutter').disabled = false;
 }
-$('gateBtn').addEventListener('click', init);
+// iOS requires DeviceOrientationEvent.requestPermission() to be called synchronously
+// inside the user gesture — before ANY await, DOM write, or other permission prompt.
+// So it is the literal first statement of the tap handler.
+$('gateBtn').addEventListener('click', () => {
+  let orientPromise = null;
+  try {
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      orientPromise = DeviceOrientationEvent.requestPermission();
+    }
+  } catch (e) { orientPromise = null; }
+  const pn = $('gateProject');
+  if (pn && pn.value.trim()) { projectName = pn.value.trim().slice(0,60); save(); }
+  init(orientPromise);
+});
 
 // ── capture ──
 $('shutter').addEventListener('click', () => {
@@ -752,14 +909,31 @@ $('shutter').addEventListener('click', () => {
   const sh = $('shutter'); sh.classList.add('armed'); setTimeout(() => sh.classList.remove('armed'), 300);
   const seq = nextSeq++;
   const shot = { seq,
+    prefix: filePrefix(projectName),   // frozen at capture — renaming later won't rewrite history
     position: currentPosition ? { ...currentPosition } : null,
     heading: currentHeading, accuracy: currentAccuracy, timestamp: Date.now() };
   shots.push(shot);
   saveShots();
   refreshMapBtn();
-  showToast(`Saved <b>field-${String(seq).padStart(3,'0')}</b>`);
+  if (shot.heading == null) {
+    showToast(`Saved <b>${shotFile(shot)}</b> — no bearing (compass not ready)`, 2800);
+  } else {
+    showToast(`Saved <b>${shotFile(shot)}</b>`);
+  }
   capturePhoto(shot);
 });
+
+// Filename prefix from the project name; falls back to the generic 'field'.
+function filePrefix(name) {
+  const slug = (name || '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32);
+  return slug || 'field';
+}
+// The prefix a given shot was SAVED with — stored per shot so renaming the
+// project later never misreports the filename of a photo already on the phone.
+function shotFile(s) {
+  return `${s.prefix || 'field'}-${String(s.seq).padStart(3, '0')}`;
+}
 
 // One toast for capture-confirm AND errors (no window.alert — dead/jarring in iOS PWA)
 function showToast(html, ms = 1800) {
@@ -847,11 +1021,15 @@ async function capturePhoto(shot) {
     putThumb(shot.seq, thumb);   // async, unlimited (no 5MB cliff); a failure never breaks the capture
   } catch (e) { /* thumbnail is best-effort */ }
 
-  const fname = `field-${seqStr}.jpg`;
+  const fname = `${shotFile(shot)}.jpg`;
   const file = window.File ? new File([blob], fname, { type: 'image/jpeg' }) : null;
   if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    // files-only (no title/text) — keeps iOS's sheet image-focused so "Save Image" stays near the top
     try { await navigator.share({ files: [file] }); return; }
-    catch (e) { if (e && e.name === 'AbortError') return; }
+    catch (e) {
+      // Cancelled: the capture is still on the map, but the photo wasn't saved anywhere.
+      if (e && e.name === 'AbortError') { showToast(`<b>${shotFile(shot)}</b> not saved — capture is still on the map`, 2800); return; }
+    }
   }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -861,9 +1039,12 @@ async function capturePhoto(shot) {
 }
 
 // ── flip ──
+$('camBtn').addEventListener('click', () => {
+  if (cameraOn) stopCamera(); else resumeCamera();
+});
 $('flipBtn').addEventListener('click', () => {
   facingMode = facingMode === 'environment' ? 'user' : 'environment';
-  startCamera();
+  if (cameraOn) startCamera();   // flipping while asleep just sets the side for next wake
 });
 
 function refreshMapBtn() {
@@ -877,9 +1058,23 @@ function refreshMapBtn() {
 // ============================================================
 $('mapBtn').addEventListener('click', () => {
   $('mapView').classList.add('active');
+  syncZoomBtns();
   requestAnimationFrame(() => requestAnimationFrame(drawMap));
 });
 $('closeMapBtn').addEventListener('click', () => $('mapView').classList.remove('active'));
+
+// ── map zoom nudge (offset on top of the auto-fit; stays centred on the captures) ──
+function syncZoomBtns() {
+  $('zoomOut').disabled = zoomOffset <= ZOOM_MIN;
+  $('zoomIn').disabled  = zoomOffset >= ZOOM_MAX;
+}
+function nudgeZoom(d) {
+  const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomOffset + d));
+  if (next === zoomOffset) return;
+  zoomOffset = next; save(); syncZoomBtns(); drawMap();
+}
+$('zoomIn').addEventListener('click', () => nudgeZoom(1));
+$('zoomOut').addEventListener('click', () => nudgeZoom(-1));
 
 // ============================================================
 // SETTINGS overlay — Theme / Data / Danger
@@ -906,15 +1101,59 @@ function renderSwatches() {
     applyTheme(b.dataset.k); renderSwatches();
   }));
 }
-function openSettings() { renderSwatches(); $('settings').classList.add('active');
+function openSettings() { renderSwatches(); renderTrash(); $('settings').classList.add('active');
+  $('projInput').value = projectName;
   document.body.classList.add('settings-open');
   $('markBtn').classList.add('expanded'); $('markBtn').setAttribute('aria-expanded', 'true'); }
 function closeSettings() { $('settings').classList.remove('active');
+  $('howSheet').classList.remove('active');   // never leave the help sheet orphaned
   document.body.classList.remove('settings-open');
   $('markBtn').classList.remove('expanded'); $('markBtn').setAttribute('aria-expanded', 'false'); }
 $('markBtn').addEventListener('click', () => {
+  // if the help sheet is up, step back to Settings rather than closing everything
+  if ($('howSheet').classList.contains('active')) { $('howSheet').classList.remove('active'); return; }
   if ($('settings').classList.contains('active')) closeSettings(); else openSettings();
 });
+// project name — persist on edit
+$('projInput').addEventListener('input', e => {
+  projectName = e.target.value.slice(0, 60); save();
+});
+// how it works
+$('howBtn').addEventListener('click', () => $('howSheet').classList.add('active'));
+$('howDone').addEventListener('click', () => $('howSheet').classList.remove('active'));
+
+// ── trash list (Settings › Deleted) ──
+function renderTrash() {
+  const el = $('trashList'); if (!el) return;
+  if (!trash.length) {
+    el.innerHTML = '<div class="trash-empty">Nothing deleted. Removed captures are kept here so you can put them back — they keep their original number.</div>';
+    return;
+  }
+  el.innerHTML = trash.map(s => {
+    const n = String(s.seq).padStart(3, '0');
+    const where = s.position ? `${s.position.lat.toFixed(4)}, ${s.position.lng.toFixed(4)}` : 'no fix';
+    return `<div class="trash-row">
+      <div class="tinfo">${shotFile(s)}<small>${where}</small></div>
+      <button class="mini" data-restore="${s.seq}">Restore</button>
+    </div>`;
+  }).join('') +
+  `<button class="mini wide" id="emptyTrash" style="margin-top:12px">Empty deleted (${trash.length})</button>`;
+  el.querySelectorAll('[data-restore]').forEach(b =>
+    b.addEventListener('click', () => restoreShot(+b.dataset.restore)));
+  const et = $('emptyTrash');
+  if (et) et.addEventListener('click', armEmptyTrash);
+}
+function armEmptyTrash() {
+  $('trashList').innerHTML = `<span class="del-warn">Permanently remove ${trash.length} deleted capture${trash.length===1?'':'s'}? Their numbers stay retired either way.</span>
+    <div class="del-row"><button class="mini" id="etCancel">Cancel</button>
+      <button class="mini danger filled" id="etOk">Empty</button></div>`;
+  $('etCancel').addEventListener('click', renderTrash);
+  $('etOk').addEventListener('click', () => {
+    trash.forEach(s => deleteThumb(s.seq));   // now the thumbnails really go
+    trash = []; save(); renderTrash();
+  });
+}
+
 // header mark button toggles settings open/closed (splays in place, stays visible top-right)
 
 // CSV export (Data section — the backup story)
@@ -922,14 +1161,14 @@ function csvEscape(v){ v = v==null?'':String(v); return /[",\n]/.test(v) ? '"'+v
 $('exportBtn').addEventListener('click', () => {
   const head = ['Photo','Seq','Latitude','Longitude','Heading','Cardinal','Accuracy_m','Timestamp_ISO'];
   const rows = shots.map(s => [
-    `field-${String(s.seq).padStart(3,'0')}.jpg`, s.seq,
+    `${shotFile(s)}.jpg`, s.seq,
     s.position ? s.position.lat.toFixed(6) : '', s.position ? s.position.lng.toFixed(6) : '',
     s.heading != null ? Math.round(s.heading) : '', s.heading != null ? card(s.heading) : '',
     s.accuracy != null ? Math.round(s.accuracy) : '', new Date(s.timestamp).toISOString()
   ]);
   const csv = [head, ...rows].map(r => r.map(csvEscape).join(',')).join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv' });
-  const fname = `field-camera_${new Date().toISOString().slice(0,10)}.csv`;
+  const fname = `${filePrefix(projectName)}_${new Date().toISOString().slice(0,10)}.csv`;
   const file = window.File ? new File([blob], fname, { type: 'text/csv' }) : null;
   if (file && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file] }).catch(()=>{}); return; }
   const url = URL.createObjectURL(blob); const a = document.createElement('a');
@@ -956,8 +1195,9 @@ $('jsonFile').addEventListener('change', e => {
     try {
       let raw = null; try { raw = JSON.parse(r.result); } catch (er) { throw new Error('Not a valid backup file'); }
       const state = normalize(raw);                 // same migration path as load()
-      shots = state.shots; nextSeq = state.nextSeq;
+      shots = state.shots; trash = state.trash; nextSeq = state.nextSeq;
       currentStyle = state.settings.mapStyle; theme = state.settings.theme; printOpts = state.settings.printOpts;
+      zoomOffset = state.settings.zoomOffset; projectName = state.settings.projectName;
       save(state);
       applyTheme(theme); syncStyleButtons(); syncToggles(); refreshMapBtn();
       if ($('mapView').classList.contains('active')) drawMap();
@@ -1005,7 +1245,7 @@ function armClear() {
   $('clearWrap').innerHTML = `<span class="del-warn">Clear all ${shots.length} captures and reset numbering? Saved photos aren't affected.</span>
     <div class="del-row"><button class="mini" id="clrCancel">Cancel</button><button class="mini danger filled" id="clrOk">Clear all</button></div>`;
   $('clrCancel').addEventListener('click', resetClear);
-  $('clrOk').addEventListener('click', () => { shots = []; nextSeq = 1; saveShots(); clearThumbs(); refreshMapBtn(); resetClear(); });
+  $('clrOk').addEventListener('click', () => { shots = []; trash = []; nextSeq = 1; saveShots(); clearThumbs(); refreshMapBtn(); resetClear(); });
 }
 function resetClear() {
   $('clearWrap').innerHTML = '<button class="mini" id="clearBtn">Clear all captures</button>';
@@ -1026,15 +1266,46 @@ function showShotInfo(shot, num) {
 }
 function armDelete(seq) {
   $('shotInfo').querySelector('.si-actions').innerHTML = `
-    <span class="del-warn">Delete shot ${String(seq).padStart(3,'0')}? The saved photo file isn't affected.</span>
+    <span class="del-warn">Delete shot ${String(seq).padStart(3,'0')}? The number is retired — later captures keep counting up, and the saved photo file isn't affected.</span>
     <div class="del-row"><button class="mini" id="delCancel">Cancel</button>
       <button class="mini danger filled" id="delConfirm">Delete</button></div>`;
   $('delCancel').addEventListener('click', () => { const s = shots.find(x => x.seq === seq); if (s) showShotInfo(s, seq); });
   $('delConfirm').addEventListener('click', () => {
-    shots = shots.filter(s => s.seq !== seq); saveShots(); deleteThumb(seq); refreshMapBtn();
+    const gone = shots.find(s => s.seq === seq);
+    if (gone) trash.unshift(gone);          // keep the record (and its thumbnail) for restore
+    shots = shots.filter(s => s.seq !== seq); saveShots(); refreshMapBtn();
     $('shotInfo').innerHTML = `<div><div class="label">Deleted ${String(seq).padStart(3,'0')}</div><div class="v small">${shots.length} left</div></div>`;
     drawMap();
+    showUndo(seq);
   });
+}
+// 10-second undo for a mis-tapped delete
+let undoTimer = null;
+function showUndo(seq) {
+  const t = $('toast');
+  const rec = trash.find(x => x.seq === seq);
+  t.innerHTML = `Deleted <b>${rec ? shotFile(rec) : 'field-' + String(seq).padStart(3,'0')}</b> &nbsp; <button class="toast-undo" id="undoBtn">Undo</button>`;
+  t.classList.add('show', 'has-action');
+  clearTimeout(window._tt); clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { t.classList.remove('show', 'has-action'); }, 10000);
+  $('undoBtn').addEventListener('click', () => {
+    restoreShot(seq);
+    t.classList.remove('show', 'has-action');
+    clearTimeout(undoTimer);
+  });
+}
+// Restore keeps the ORIGINAL number — it's burned into the saved photo.
+function restoreShot(seq) {
+  const i = trash.findIndex(s => s.seq === seq);
+  if (i < 0) return false;
+  const [rec] = trash.splice(i, 1);
+  shots.push(rec);
+  shots.sort((a, b) => a.seq - b.seq);      // slot back into numeric order
+  saveShots(); refreshMapBtn();
+  if ($('mapView').classList.contains('active')) drawMap();
+  renderTrash();
+  showToast(`Restored <b>${shotFile(rec)}</b>`);
+  return true;
 }
 
 async function drawMap() {
@@ -1083,10 +1354,16 @@ async function renderMapInto(ctx, W, H, dark) {
   const pLng = Math.max((maxLng - minLng) * 0.4, 0.0008);
   minLat -= pLat; maxLat += pLat; minLng -= pLng; maxLng += pLng;
   const cLat = (minLat + maxLat) / 2, cLng = (minLng + maxLng) / 2;
-  const zoom = zoomForBounds(minLat, maxLat, minLng, maxLng, W, H);
+  const fit = zoomForBounds(minLat, maxLat, minLng, maxLng, W, H);
+  const zoom = Math.max(1, Math.min(19, fit + zoomOffset));
   drawMap._view = { cLat, cLng, zoom };
 
   await renderTilesTo(ctx, 0, 0, W, H, cLat, cLng, zoom);
+  // If a style returns nothing, say so — a blank grid looks like a broken app.
+  const tr = renderTilesTo._lastResult;
+  if (dark && tr && tr.requested > 0 && tr.got === 0) {
+    showToast(`${STYLES[currentStyle].name} tiles unavailable — try another map style in Settings`, 3600);
+  }
   if (dark) { ctx.fillStyle = 'rgba(12,12,13,0.42)'; ctx.fillRect(0, 0, W, H); }
   const project = (lat, lng) => projectAtZoom(lat, lng, cLat, cLng, zoom, 0, 0, W, H);
 
@@ -1152,7 +1429,7 @@ async function buildSheetPages() {
   const dstr = new Date().toLocaleString();
   const pages = [];
   let head = `<div class="print-wordmark">Field Camera.</div>
-    <div class="print-eyebrow">Position + bearing · capture record</div>
+    <div class="print-eyebrow">${projectName ? projectName.replace(/[<>&]/g, '') : 'Position + bearing · capture record'}</div>
     <hr class="print-rule">
     <div class="print-meta">${shots.length} capture${shots.length===1?'':'s'} &nbsp;·&nbsp; ${located.length} located &nbsp;·&nbsp; ${dstr}</div>`;
 
@@ -1173,7 +1450,7 @@ async function buildSheetPages() {
     const rows = shots.map(s => {
       const hdg = s.heading != null ? `${Math.round(s.heading)}° ${card(s.heading)}` : '—';
       const pos = s.position ? `${s.position.lat.toFixed(6)}, ${s.position.lng.toFixed(6)}` : 'no fix';
-      return `<tr><td>${String(s.seq).padStart(3,'0')}</td><td>field-${String(s.seq).padStart(3,'0')}.jpg</td><td>${pos}</td><td>${hdg}</td><td>${new Date(s.timestamp).toLocaleString()}</td></tr>`;
+      return `<tr><td>${String(s.seq).padStart(3,'0')}</td><td>${shotFile(s)}.jpg</td><td>${pos}</td><td>${hdg}</td><td>${new Date(s.timestamp).toLocaleString()}</td></tr>`;
     }).join('');
     pages.push((head || '') + `<div class="print-wordmark" style="font-size:14pt">Captures</div><hr class="print-rule">
       <table><thead><tr><th>No.</th><th>File</th><th>Coordinates</th><th>Bearing</th><th>Time</th></tr></thead>

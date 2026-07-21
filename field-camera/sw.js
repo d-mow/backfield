@@ -1,6 +1,7 @@
 /* Field Camera service worker — offline shell.
-   Bump CACHE on any shipped change so clients pick up the new build. */
-const CACHE = 'fieldcam-v1';
+   Bump CACHE on any shipped change so clients pick up the new build.
+   HTML is served network-first, so app updates land even without a bump. */
+const CACHE = 'fieldcam-v2';
 const SHELL = [
   '/field-camera/',
   '/field-camera/index.html',
@@ -31,13 +32,28 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // App shell (same-origin): cache-first, fall back to network, update cache.
   if (url.origin === self.location.origin) {
+    const isDoc = req.mode === 'navigate' ||
+                  (req.headers.get('accept') || '').includes('text/html');
+
+    // HTML: NETWORK-FIRST. Cache-first here means a shipped update never reaches
+    // anyone who already has the app cached — fall back to cache only when offline.
+    if (isDoc) {
+      e.respondWith(
+        fetch(req).then(res => {
+          if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
+          return res;
+        }).catch(() => caches.match(req).then(hit => hit || caches.match('/field-camera/')))
+      );
+      return;
+    }
+
+    // Static assets (icons, manifest): cache-first is fine, they're versioned by name.
     e.respondWith(
       caches.match(req).then(hit => hit || fetch(req).then(res => {
         if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
         return res;
-      }).catch(() => caches.match('/field-camera/')))
+      }))
     );
     return;
   }
