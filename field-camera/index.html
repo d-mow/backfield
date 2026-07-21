@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0c0c0d">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Field Camera — records position &amp; bearing</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,600..800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* Field Camera — one display face (Archivo Expanded wordmark),
+     Space Mono for labels + numerals, single cyan accent. */
+  :root {
+    /* Mono — default (screen affordance: mono is the default per skill) */
+    --bg:        #0c0c0d;
+    --bg-soft:   #16161a;
+    --line:      rgba(236,233,225,0.13);
+    --line-soft: rgba(236,233,225,0.07);
+    --ink:       #ece9e1;
+    --ink-mid:   #a6a39b;
+    --ink-dim:   #6b6862;
+    --accent:    #ffffff;
+    --display:   'Archivo', system-ui, sans-serif;
+    --num:       'Space Mono', ui-monospace, monospace;
+    --mono:      'Space Mono', ui-monospace, monospace;
+  }
+  /* Named themes — keys stable forever; only display names may change */
+  body[data-theme="blueprint"] {
+    --bg:#0a1830; --bg-soft:#0e1d3a;
+    --line:rgba(220,230,245,0.13); --line-soft:rgba(220,230,245,0.07);
+    --ink:#dce6f5; --ink-mid:#8a93a8; --ink-dim:#5a6278; --accent:#5bc6ff;
+  }
+  body[data-theme="bone"] {
+    --bg:#e9e5da; --bg-soft:#dedace;
+    --line:rgba(26,24,19,0.18); --line-soft:rgba(26,24,19,0.09);
+    --ink:#1a1813; --ink-mid:#5a564b; --ink-dim:#8a8577; --accent:#9a5b34;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); }
+  body { font-family: var(--mono); font-size: 12px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  button { font-family: inherit; color: inherit; cursor: pointer; }
+  .num { font-family: var(--num); font-variant-numeric: tabular-nums; }
+  .label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-dim); }
+
+  #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+
+  /* HEADER */
+  :root { --header-h: calc(max(env(safe-area-inset-top), 14px) + 44px); }
+  header.top { position: absolute; top: 0; left: 0; right: 0; z-index: 35;
+    padding: max(env(safe-area-inset-top), 14px) 20px 12px;
+    display: flex; justify-content: space-between; align-items: baseline;
+    background: linear-gradient(to bottom, rgba(12,12,13,0.85), rgba(12,12,13,0)); }
+  body.settings-open header.top { background: var(--bg); z-index: 50; }
+  .brand { font-family: var(--display); font-weight: 800; font-stretch: 125%; font-size: 16px; line-height: 1; letter-spacing: -0.01em; text-transform: uppercase; white-space: nowrap; }
+  .brand .dot { color: var(--accent); }
+  .brand-sub { font-family: var(--mono); font-size: 8px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-dim); margin-top: 3px; }
+  .status { text-align: right; font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-mid); }
+  .status .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 6px; vertical-align: middle; animation: pulse 2s infinite; }
+  @keyframes pulse { 50% { opacity: 0.3; } }
+  .masthead { display: flex; align-items: center; gap: 11px; }
+  .app-mark { width: 26px; height: 26px; color: var(--ink); flex-shrink: 0; }
+  .head-right { display: flex; align-items: center; gap: 14px; }
+  @media (max-width: 359px) {
+    .status span:last-child { display: none; }
+  }
+  .bf-mark { width: 32px; height: 32px; padding: 0; border: 0; background: none; color: var(--ink-mid); cursor: pointer; }
+  .bf-mark:hover, .bf-mark[aria-expanded="true"] { color: var(--ink); }
+  .bf-mark svg { width: 100%; height: 100%; display: block; }
+  .bf-mark rect { fill: currentColor; }
+  .bf-mark .lines { transform-box: fill-box; transform-origin: center; transition: transform .45s cubic-bezier(.5,0,.2,1); transform: rotate(90deg); }
+  .bf-mark .lw { transition: transform .42s cubic-bezier(.5,0,.2,1); }
+  .bf-mark .lw1 { transform: translateX(20px); }
+  .bf-mark .lw3 { transform: translateX(-20px); }
+  .bf-mark.expanded .lines { transform: rotate(0); }
+  .bf-mark.expanded .lw1, .bf-mark.expanded .lw3 { transform: translateX(0); transition-delay: .08s; }
+  @media (prefers-reduced-motion: reduce) { .bf-mark .lines, .bf-mark .lw { transition: none; } }
+
+  /* settings overlay — opens BELOW the header so the mark button stays visible top-right */
+  .settings { position: absolute; top: var(--header-h); left: 0; right: 0; bottom: 0; z-index: 45; background: var(--bg); display: none; flex-direction: column; }
+  .settings.active { display: flex; }
+  .set-head { display: flex; align-items: center;
+    padding: 14px 20px 12px; border-bottom: 1px solid var(--line); }
+  .set-head .st { font-family: var(--display); font-weight: 800; font-stretch: 125%; font-size: 16px; line-height: 1; letter-spacing: -0.01em; text-transform: uppercase; }
+  .set-body { flex: 1; overflow-y: auto; padding: 8px 20px 32px; }
+  .set-sec { margin-top: 24px; }
+  .set-sec > .h { font-family: var(--mono); font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-dim); padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+  /* theme swatches (Fore pattern: preview + name + subtitle) */
+  .swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .swatch { border: 1px solid var(--line); border-radius: 2px; padding: 10px; text-align: left; background: none; color: var(--ink); display: flex; gap: 10px; align-items: center; transition: border-color .12s; }
+  .swatch:active { border-color: var(--ink); }
+  .swatch.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .sw-prev { width: 30px; height: 30px; border: 1px solid var(--line); flex-shrink: 0; position: relative; }
+  .sw-prev i { position: absolute; width: 9px; height: 9px; border-radius: 50%; right: 4px; bottom: 4px; }
+  .sw-name { font-family: var(--mono); font-size: 12px; }
+  .sw-sub { font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-dim); margin-top: 2px; }
+  .set-row2 { display: flex; gap: 8px; }
+  .set-row2 .mini { flex: 1; text-align: center; padding: 12px 8px; display: flex; align-items: center; justify-content: center; gap: 7px; }
+  .set-row2 .mini svg { width: 14px; height: 14px; }
+  .set-hint { font-family: var(--mono); font-size: 10px; line-height: 1.6; color: var(--ink-mid); margin-top: 10px; }
+  .set-meta { font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-dim); }
+
+  /* print options toggles */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--line-soft); }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-row .tl { font-family: var(--mono); font-size: 12px; }
+  .toggle-row .tl small { display: block; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-dim); margin-top: 2px; }
+  .tgl { width: 42px; height: 24px; border: 1px solid var(--line); border-radius: 2px; background: none; position: relative; flex-shrink: 0; }
+  .tgl::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: var(--ink-dim); transition: transform .16s, background .16s; }
+  .tgl.on { border-color: var(--ink); }
+  .tgl.on::after { transform: translateX(18px); background: var(--accent); }
+
+
+  /* print preview overlay */
+  .preview { position: absolute; inset: 0; z-index: 55; background: var(--bg); display: none; flex-direction: column; }
+  .preview.active { display: flex; }
+  .pv-head { display: flex; justify-content: space-between; align-items: center;
+    padding: max(env(safe-area-inset-top), 16px) 20px 14px; border-bottom: 1px solid var(--line); }
+  .pv-title { font-family: var(--display); font-weight: 800; font-stretch: 125%; font-size: 16px; text-transform: uppercase; letter-spacing: -0.01em; }
+  .pv-actions { display: flex; gap: 8px; }
+  .mini.amber { border-color: var(--accent); background: var(--accent); color: var(--bg); }
+  .pv-scroll { flex: 1; overflow-y: auto; padding: 20px 16px max(env(safe-area-inset-bottom), 24px); background: #26262a; }
+  .pv-pages { display: flex; flex-direction: column; gap: 18px; align-items: center; }
+  .pv-note { text-align: center; font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; color: var(--ink-mid); margin-top: 16px; }
+  /* on-screen "paper" — mirrors the printed sheet (dark ink on white) */
+  .paper { width: 100%; max-width: 460px; background: #fff; color: #000; padding: 22px 20px; position: relative; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+  .paper-n { position: absolute; top: -14px; left: 0; font-family: var(--mono); font-size: 8px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-mid); }
+  .paper .print-sheet { font-family: 'Space Mono', monospace; font-size: 9pt; line-height: 1.4; color: #000; }
+  .paper .print-wordmark { font-family: 'Archivo', sans-serif; font-weight: 800; font-stretch: 125%; font-size: 19pt; line-height: 1.05; letter-spacing: -0.01em; text-transform: uppercase; }
+  .paper .print-eyebrow { font-size: 7.5pt; letter-spacing: 0.24em; text-transform: uppercase; margin: 4pt 0 0; }
+  .paper .print-rule { border: 0; border-top: 1.5pt solid #000; margin: 8pt 0; }
+  .paper .print-meta { font-size: 8pt; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 10pt; }
+  .paper .printMap { width: 100%; height: auto; border: 0.5pt solid #000; display: block; }
+  .paper .print-attr { font-size: 7pt; margin-top: 5pt; }
+  .paper .print-sheet table { border-collapse: collapse; width: 100%; margin-top: 6pt; }
+  .paper .print-sheet th, .paper .print-sheet td { border: 0.5pt solid #000; padding: 4pt 6pt; text-align: left; font-variant-numeric: tabular-nums; }
+  .paper .print-sheet th { font-size: 7.5pt; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; }
+  .paper .print-sheet td { font-size: 8.5pt; }
+  .paper .pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6pt; margin-top: 6pt; }
+  .paper .pcell { border: 0.5pt solid #000; margin: 0; }
+  .paper .pcell img { width: 100%; display: block; }
+  .paper .pcell figcaption { font-family: 'Space Mono', monospace; font-size: 7.5pt; padding: 3pt 4pt; border-top: 0.5pt solid #000; }
+
+  /* VIEWFINDER */
+  .finder { flex: 1; position: relative; overflow: hidden; background: #000; min-height: 0; }
+  #video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  /* center crosshair */
+  .reticle { position: absolute; inset: 0; pointer-events: none; }
+  .reticle .v, .reticle .h { position: absolute; background: rgba(236,233,225,0.45); }
+  .reticle .v { left: 50%; width: 1px; height: 18px; transform: translateX(-50%); }
+  .reticle .v.up { top: calc(50% - 26px); }
+  .reticle .v.dn { top: calc(50% + 8px); }
+  .reticle .h { top: 50%; height: 1px; width: 18px; transform: translateY(-50%); }
+  .reticle .h.lf { left: calc(50% - 26px); }
+  .reticle .h.rt { left: calc(50% + 8px); }
+  .reticle .c { position: absolute; top: 50%; left: 50%; width: 3px; height: 3px; transform: translate(-50%,-50%); border: 1px solid rgba(236,233,225,0.7); border-radius: 50%; }
+
+  /* minimal readout */
+  .readout { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+    padding: 28px 20px 18px;
+    background: linear-gradient(to top, rgba(12,12,13,0.92), rgba(12,12,13,0.5) 55%, rgba(12,12,13,0));
+    display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; pointer-events: none; }
+  .readout .col { display: flex; flex-direction: column; gap: 10px; }
+  .readout .v { font-family: var(--num); font-size: 16px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+
+  .compass { width: 104px; height: 104px; position: relative; flex-shrink: 0; pointer-events: auto; }
+  .compass .lubber { position: absolute; top: -3px; left: 50%; width: 0; height: 0; transform: translateX(-50%);
+    border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid var(--accent); z-index: 3; }
+  .compass .bezel { position: absolute; inset: 0; transition: transform 0.18s linear; }
+  .compass .bezel svg { width: 100%; height: 100%; display: block; }
+  .compass .deg { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; }
+  .compass .deg b { font-family: var(--num); font-size: 28px; font-weight: 700; line-height: 1; }
+  .compass .deg s { font-family: var(--mono); font-size: 8px; letter-spacing: 0.24em; color: var(--ink-mid); text-decoration: none; margin-top: 3px; }
+
+  /* CONTROLS */
+  .controls { position: relative; z-index: 8;
+    padding: 14px 24px max(env(safe-area-inset-bottom), 20px);
+    background: var(--bg); border-top: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .ctrl-btn { background: none; border: 1px solid var(--line); border-radius: 2px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ink); padding: 11px 14px; min-width: 92px; text-align: center; transition: border-color 0.15s; }
+  .ctrl-btn:hover { border-color: var(--ink-mid); }
+  .ctrl-btn:disabled { opacity: 0.35; }
+  .ctrl-btn .num { font-size: 12px; }
+  .shutter { width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--ink); background: var(--ink); position: relative; flex-shrink: 0; transition: transform 0.08s; }
+  .shutter:active { transform: scale(0.92); }
+  .shutter::after { content: ''; position: absolute; inset: 5px; border-radius: 50%; border: 2px solid var(--bg); transition: background 0.15s; }
+  .shutter.armed::after { background: var(--accent); border-color: var(--accent); }
+
+  .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 50; }
+  .flash.fire { animation: flash 0.3s ease-out; }
+  @keyframes flash { 0% { opacity: 0; } 30% { opacity: 0.85; } 100% { opacity: 0; } }
+
+  /* toast — capture-confirm + errors; above overlays so Settings errors are visible */
+  .toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); transform: translateX(-50%) translateY(8px);
+    z-index: 70; background: var(--bg-soft); border: 1px solid var(--line); border-radius: 2px;
+    padding: 9px 15px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ink); opacity: 0; transition: 0.25s; pointer-events: none; white-space: normal; max-width: min(88vw, 360px); text-align: center; line-height: 1.4; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast b { color: var(--accent); }
+
+  /* PERMISSION GATE */
+  .gate { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; padding: 32px; background: var(--bg); }
+  .gate p { color: var(--ink-mid); font-size: 12px; line-height: 1.7; max-width: 280px; margin-bottom: 28px; }
+  .gate .g-btn { border: 1px solid var(--ink); border-radius: 2px; padding: 14px 28px; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; background: var(--ink); color: var(--bg); }
+  .gate .g-btn:active { transform: scale(0.97); }
+
+  /* MAP OVERLAY */
+  .map-view { position: absolute; inset: 0; z-index: 40; background: var(--bg); display: none; flex-direction: column; }
+  .map-view.active { display: flex; }
+  .map-head { padding: max(env(safe-area-inset-top), 16px) 20px 12px;
+    display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); }
+  .map-head .mh-title { font-family: var(--display); font-weight: 800; font-stretch: 125%; font-size: 16px; line-height: 1; letter-spacing: -0.01em; text-transform: uppercase; }
+  .map-head .mh-actions { display: flex; gap: 8px; }
+  .ctrl-btn.primary { border-color: var(--accent); background: var(--accent); color: #0c0c0d; }
+  .style-bar { display: flex; border-bottom: 1px solid var(--line); }
+  .style-seg { flex: 1; background: none; border: none; border-right: 1px solid var(--line);
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ink-dim); padding: 9px 2px; white-space: nowrap; transition: color 0.15s, background 0.15s; }
+  .style-seg:last-child { border-right: none; }
+  .style-seg.active { color: #0c0c0d; background: var(--accent); }
+  .map-container { flex: 1; position: relative; overflow: hidden; min-height: 200px; }
+  #mapCanvas { display: block; }
+  .shot-info { padding: 16px 20px max(env(safe-area-inset-bottom), 18px); border-top: 1px solid var(--line);
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; }
+  .shot-info .label { margin-bottom: 3px; }
+  .shot-info .v { font-family: var(--num); font-size: 16px; font-variant-numeric: tabular-nums; line-height: 1.3; }
+  .shot-info .v.small { font-size: 12px; color: var(--ink-mid); }
+  .si-actions { grid-column: 1 / -1; margin-top: 4px; }
+  .mini { background: none; border: 1px solid var(--line); border-radius: 2px; font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink); padding: 8px 12px; }
+  .mini.danger { border-color: var(--ink); color: var(--ink); }
+  .mini.danger.filled { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .del-warn { display: block; font-family: var(--mono); font-size: 10px; line-height: 1.5; color: var(--ink-mid); margin-bottom: 8px; }
+  .del-row { display: flex; gap: 8px; }
+  .del-row .mini { flex: 1; text-align: center; padding: 10px; }
+
+  /* ===== PRINT (Backfield convention) ===== */
+  @media screen { .print-only { display: none !important; } }
+  @media print {
+    @page { margin: 14mm 12mm; }
+    :root { --bg:#fff; --ink:#000; --ink-mid:#2a2a2a; --ink-dim:#555; --line:#000; --line-soft:#999; --accent:#000; }
+    html, body { background:#fff !important; color:#000 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; margin:0; padding:0; overflow:visible !important; height:auto !important; }
+    #app { position: static !important; display:block !important; }
+    .no-print { display:none !important; }
+    .print-only { display:revert !important; }
+    * { box-shadow:none !important; text-shadow:none !important; animation:none !important; transition:none !important; }
+
+    .print-sheet { display:block !important; width:100%; margin:0; padding:0;
+      font-family:'Space Mono', ui-monospace, monospace; font-size:10pt; line-height:1.4; color:#000; }
+    .print-wordmark { font-family:'Archivo', system-ui, sans-serif; font-weight:800; font-stretch:125%; font-size:19pt; line-height:1.05; letter-spacing:-0.01em; text-transform:uppercase; }
+    .print-eyebrow { font-size:7.5pt; letter-spacing:0.24em; text-transform:uppercase; color:#000; margin:4pt 0 0; }
+    .print-rule { border:0; border-top:1.5pt solid #000; margin:8pt 0; }
+    .print-meta { font-size:8pt; letter-spacing:0.16em; text-transform:uppercase; margin-bottom:10pt; }
+    .printMap { width:100%; height:auto; border:0.5pt solid #000; display:block; }
+    .print-attr { font-size:7pt; color:#000; margin-top:5pt; }
+    .print-sheet table { border-collapse:collapse; width:100%; margin-top:6pt; }
+    .print-sheet th, .print-sheet td { border:0.5pt solid #000; padding:4pt 6pt; font-variant-numeric:tabular-nums; text-align:left; }
+    .print-sheet th { font-size:7.5pt; letter-spacing:0.16em; text-transform:uppercase; font-weight:700; }
+    .print-sheet td { font-size:9pt; }
+    .print-break { break-before:page; page-break-before:always; }
+    .print-sheet tr { break-inside:avoid; page-break-inside:avoid; }
+    /* photo contact grid */
+    .pgrid { display:grid; grid-template-columns:repeat(3, 1fr); gap:6pt; margin-top:6pt; }
+    .pcell { break-inside:avoid; page-break-inside:avoid; border:0.5pt solid #000; margin:0; }
+    .pcell img { width:100%; display:block; }
+    .pcell figcaption { font-family:'Space Mono', monospace; font-size:7.5pt; letter-spacing:0.16em; padding:3pt 4pt; border-top:0.5pt solid #000; }
+    a[href]::after { content:none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top no-print">
+    <div class="masthead">
+      <svg class="app-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10Z"/><path d="M12 11 15 7" stroke-width="2.2"/></svg>
+      <div>
+        <div class="brand">Field Camera<span class="dot">.</span></div>
+        <div class="brand-sub">position + bearing</div>
+      </div>
+    </div>
+    <div class="head-right">
+      <div class="status"><span class="dot"></span><span id="statusText">tap enable</span></div>
+      <button class="bf-mark" id="markBtn" aria-label="Settings" aria-expanded="false"><svg viewBox="0 0 120 120" aria-hidden="true"><g class="lines"><g class="lw lw1"><rect x="38" y="28" width="4" height="64" rx="2"/></g><g class="lw lw2"><rect x="57" y="28" width="6" height="64" rx="3"/></g><g class="lw lw3"><rect x="78" y="28" width="4" height="64" rx="2"/></g></g></svg></button>
+    </div>
+  </header>
+
+  <div class="finder no-print">
+    <video id="video" autoplay playsinline muted></video>
+    <div class="reticle"><span class="v up"></span><span class="v dn"></span><span class="h lf"></span><span class="h rt"></span><span class="c"></span></div>
+    <div class="readout">
+      <div class="col"><div class="v" id="coords">— —</div></div>
+      <div class="compass">
+        <div class="lubber"></div>
+        <div class="bezel" id="bezel"><svg viewBox="0 0 100 100" id="bezelSvg"></svg></div>
+        <div class="deg"><b id="degVal">—</b><s id="degCard">no fix</s></div>
+      </div>
+    </div>
+    <div class="flash" id="flash"></div>
+    <div class="toast" id="toast"></div>
+    <div class="gate" id="gate">
+      <p>Records exactly where you stood and which way you faced. Enable camera, location, and compass — iOS asks for each.</p>
+      <button class="g-btn" id="gateBtn">Enable</button>
+    </div>
+  </div>
+
+  <div class="controls no-print">
+    <button class="ctrl-btn" id="mapBtn" disabled>Map <span class="num">(0)</span></button>
+    <button class="shutter" id="shutter" aria-label="Capture"></button>
+    <button class="ctrl-btn" id="flipBtn">Flip</button>
+  </div>
+
+  <div class="map-view no-print" id="mapView">
+    <div class="map-head">
+      <div class="mh-title">Captures</div>
+      <div class="mh-actions">
+        <button class="ctrl-btn" id="closeMapBtn">Close</button>
+      </div>
+    </div>
+    <div class="style-bar" id="styleBar">
+      <button class="style-seg" data-style="carto">Carto</button>
+      <button class="style-seg" data-style="hot">Humanitarian</button>
+      <button class="style-seg" data-style="cyclosm">CyclOSM</button>
+    </div>
+    <div class="map-container"><canvas id="mapCanvas"></canvas></div>
+    <div class="shot-info" id="shotInfo">
+      <div><div class="label">Tap a pin</div><div class="v small">—</div></div>
+    </div>
+  </div>
+
+  <!-- print preview overlay -->
+  <div class="preview no-print" id="preview">
+    <div class="pv-head">
+      <div class="pv-title">Print preview</div>
+      <div class="pv-actions">
+        <button class="mini" id="previewClose">Close</button>
+        <button class="mini amber" id="previewPrint">Print</button>
+      </div>
+    </div>
+    <div class="pv-scroll"><div class="pv-pages" id="previewPages"></div>
+      <div class="pv-note">Layout preview — exact page breaks and margins are set by your printer.</div>
+    </div>
+  </div>
+
+  <!-- settings overlay (Fore/Folio pattern) -->
+  <div class="settings no-print" id="settings">
+    <div class="set-head">
+      <div class="st">Settings</div>
+    </div>
+    <div class="set-body">
+      <div class="set-sec">
+        <div class="h">Theme</div>
+        <div class="swatches" id="swatches"></div>
+      </div>
+      <div class="set-sec">
+        <div class="h">Print</div>
+        <div class="toggle-row"><div class="tl">Map<small>Page 1 · capture map</small></div><button class="tgl on" id="tgMap" data-k="map"></button></div>
+        <div class="toggle-row"><div class="tl">Data table<small>Coordinates &amp; bearing</small></div><button class="tgl on" id="tgTable" data-k="table"></button></div>
+        <div class="toggle-row"><div class="tl">Photos<small>Contact grid of captures</small></div><button class="tgl" id="tgPhotos" data-k="photos"></button></div>
+        <div class="set-row2" style="margin-top:14px">
+          <button class="mini" id="previewBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Preview</button>
+          <button class="mini" id="printFromSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>Print</button>
+        </div>
+        <div class="set-hint">Preview shows the actual sheet on screen before printing. Photos print from stored thumbnails (kept for every capture). The map and data print regardless.</div>
+      </div>
+      <div class="set-sec">
+        <div class="h">Data</div>
+        <div class="set-row2">
+          <button class="mini" id="exportBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export CSV</button>
+          <button class="mini" id="importBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Import CSV</button>
+        </div>
+        <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
+        <div class="set-row2" style="margin-top:8px">
+          <button class="mini" id="backupBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Back up (JSON)</button>
+          <button class="mini" id="restoreBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Restore</button>
+        </div>
+        <input type="file" id="jsonFile" accept=".json,application/json" style="display:none">
+        <div class="set-hint">JSON is the full backup — the whole workspace (captures + settings) in one file, restored through the same load path. CSV is a spreadsheet deliverable. Photos aren't in the backup; they save to your device on capture.</div>
+      </div>
+      <div class="set-sec">
+        <div class="h">Danger</div>
+        <div id="clearWrap"><button class="mini" id="clearBtn">Clear all captures</button></div>
+        <div class="set-hint">Removes the map history and resets numbering. Photos already saved to your device are not affected.</div>
+      </div>
+      <div class="set-sec">
+        <div class="h">About</div>
+        <div class="set-meta">Field Camera. · Backfield · 2026</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- printable two-page sheet (built on demand) -->
+  <div class="print-only print-sheet" id="printSheet"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const video = $('video');
+
+const CARDS = ['N','NE','E','SE','S','SW','W','NW'];
+const card = d => CARDS[Math.round(((d % 360) / 45)) % 8];
+
+let currentPosition = null, currentAccuracy = null, currentHeading = null;
+let stream = null, facingMode = 'environment';
+
+// ── capture store — one state object (fieldcam:state) in localStorage ──
+const STATE_KEY = 'fieldcam:state';   // { v, shots, nextSeq, settings }
+const LEGACY_THUMBS_KEY = 'fieldcam:thumbs'; // pre-Batch-2 localStorage thumbs (migrated to IDB on load)
+const SCHEMA_V = 1;
+
+let shots = [], nextSeq = 1;
+let loaded = false;
+// settings live in state.settings but are mirrored to these vars the app already uses
+let currentStyle = 'cyclosm', theme = '', printOpts = { map: true, table: true, photos: false };
+
+// ── photo thumbnails live in IndexedDB (media, no 5MB cliff) — dataURLs, not Blobs (iOS) ──
+const IDB_NAME = 'fieldcam', IDB_STORE = 'thumbs';
+let _idb = null;
+function idb() {
+  if (_idb) return _idb;
+  _idb = new Promise((res, rej) => {
+    let req;
+    try { req = indexedDB.open(IDB_NAME, 1); } catch (e) { return rej(e); }
+    req.onupgradeneeded = () => { const db = req.result; if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE); };
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+  return _idb;
+}
+function idbTx(mode, fn) {
+  return idb().then(db => new Promise((res, rej) => {
+    const tx = db.transaction(IDB_STORE, mode);
+    const store = tx.objectStore(IDB_STORE);
+    let out; try { out = fn(store); } catch (e) { return rej(e); }
+    tx.oncomplete = () => res(out); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error);
+  }));
+}
+function putThumb(seq, dataURL) { return idbTx('readwrite', s => s.put(dataURL, seq)).catch(() => false); }
+function deleteThumb(seq)       { return idbTx('readwrite', s => s.delete(seq)).catch(() => {}); }
+function clearThumbs()          { return idbTx('readwrite', s => s.clear()).catch(() => {}); }
+function getAllThumbs() {        // → { seq: dataURL }
+  return idb().then(db => new Promise((res) => {
+    const map = {};
+    let tx; try { tx = db.transaction(IDB_STORE, 'readonly'); } catch (e) { return res({}); }
+    const cur = tx.objectStore(IDB_STORE).openCursor();
+    cur.onsuccess = e => { const c = e.target.result; if (c) { map[c.key] = c.value; c.continue(); } else res(map); };
+    cur.onerror = () => res(map);
+  })).catch(() => ({}));
+}
+
+// The house migration law: every load passes through normalize(). Never throws, never null.
+function normalize(raw) {
+  const s = (raw && typeof raw === 'object') ? raw : {};
+
+  // --- migrate the pre-v1 scattered-keys shape (fieldcam.shots / .nextSeq / .mapStyle / .theme / .printOpts) ---
+  if (s.v == null && s.shots == null) {
+    const old = {};
+    try { old.shots = JSON.parse(localStorage.getItem('fieldcam.shots') || 'null'); } catch (e) {}
+    try { old.nextSeq = parseInt(localStorage.getItem('fieldcam.nextSeq') || '', 10); } catch (e) {}
+    try { old.mapStyle = localStorage.getItem('fieldcam.mapStyle'); } catch (e) {}
+    try { old.theme = localStorage.getItem('fieldcam.theme'); } catch (e) {}
+    try { old.printOpts = JSON.parse(localStorage.getItem('fieldcam.printOpts') || 'null'); } catch (e) {}
+    if (Array.isArray(old.shots)) s.shots = old.shots;
+    if (Number.isFinite(old.nextSeq)) s.nextSeq = old.nextSeq;
+    s.settings = {
+      mapStyle: old.mapStyle || undefined,
+      theme: old.theme || undefined,
+      printOpts: (old.printOpts && typeof old.printOpts === 'object') ? old.printOpts : undefined
+    };
+  }
+
+  // --- fill every default; migrate every record ---
+  s.v = SCHEMA_V;
+  s.shots = Array.isArray(s.shots) ? s.shots.map(normShot).filter(Boolean) : [];
+  // counter is monotonic and never below the highest seq ever issued
+  const maxSeq = s.shots.reduce((m, x) => Math.max(m, x.seq || 0), 0);
+  s.nextSeq = Math.max(Number.isFinite(s.nextSeq) ? s.nextSeq : 1, maxSeq + 1, 1);
+  const set = (s.settings && typeof s.settings === 'object') ? s.settings : {};
+  s.settings = {
+    mapStyle: (typeof set.mapStyle === 'string' && STYLES[set.mapStyle]) ? set.mapStyle : 'cyclosm',
+    theme: (set.theme === 'blueprint' || set.theme === 'bone') ? set.theme : '',
+    printOpts: {
+      map:    set.printOpts ? set.printOpts.map    !== false : true,
+      table:  set.printOpts ? set.printOpts.table  !== false : true,
+      photos: set.printOpts ? set.printOpts.photos === true  : false
+    }
+  };
+  return s;
+}
+function normShot(r) {
+  if (!r || typeof r !== 'object' || !Number.isFinite(r.seq)) return null;
+  const pos = (r.position && Number.isFinite(r.position.lat) && Number.isFinite(r.position.lng))
+    ? { lat: r.position.lat, lng: r.position.lng, alt: (r.position.alt != null ? r.position.alt : null) } : null;
+  return {
+    seq: r.seq,
+    position: pos,
+    heading: Number.isFinite(r.heading) ? r.heading : null,
+    accuracy: Number.isFinite(r.accuracy) ? r.accuracy : null,
+    timestamp: Number.isFinite(r.timestamp) ? r.timestamp : Date.now()
+  };
+}
+function load() {
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem(STATE_KEY)); } catch (e) {}
+  const state = normalize(raw);
+  // hydrate the vars the app uses
+  shots = state.shots; nextSeq = state.nextSeq;
+  currentStyle = state.settings.mapStyle; theme = state.settings.theme; printOpts = state.settings.printOpts;
+  save(state);            // write the migrated shape back
+  // one-time: clear the old scattered keys now that they're folded in
+  try { ['fieldcam.shots','fieldcam.nextSeq','fieldcam.mapStyle','fieldcam.theme','fieldcam.printOpts','fieldcam.thumbs']
+    .forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  // one-time: migrate any pre-Batch-2 localStorage thumbnails into IndexedDB, then drop the LS copy
+  try {
+    const legacy = JSON.parse(localStorage.getItem(LEGACY_THUMBS_KEY) || 'null');
+    if (legacy && typeof legacy === 'object') {
+      Promise.all(Object.keys(legacy).map(k => putThumb(Number(k), legacy[k])))
+        .then(() => { try { localStorage.removeItem(LEGACY_THUMBS_KEY); } catch (e) {} });
+    }
+  } catch (e) {}
+  loaded = true;
+  return state;
+}
+function currentState() {
+  return { v: SCHEMA_V, shots, nextSeq, settings: { mapStyle: currentStyle, theme, printOpts } };
+}
+function save(state) {
+  try { localStorage.setItem(STATE_KEY, JSON.stringify(state || currentState())); return true; }
+  catch (e) {
+    if (!save._warned) { save._warned = true;
+      showToast('Storage full — map not saved. Photos are safe. Back up &amp; clear to continue.', 3600); }
+    return false;
+  }
+}
+// app-facing writer (name kept so mutators are untouched)
+function saveShots() { return save(); }
+
+// ============================================================
+// OSM tile engine (keyless) — from the original camera app
+// ============================================================
+const TILE = 256;
+const tileCache = new Map();
+function lonLatToTile(lon, lat, z) {
+  const n = Math.pow(2, z);
+  const x = (lon + 180) / 360 * n;
+  const r = lat * Math.PI / 180;
+  const y = (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n;
+  return { x, y };
+}
+// Keyless OSM raster styles. Each builds a tile URL and carries its attribution.
+const STYLES = {
+  carto: {
+    name: 'OSM Carto',
+    url: (z, x, y) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png`,
+    attrShort: '© OpenStreetMap',
+    attrFull: '© OpenStreetMap contributors'
+  },
+  hot: {
+    name: 'Humanitarian',
+    url: (z, x, y) => `https://a.tile.openstreetmap.fr/hot/${z}/${x}/${y}.png`,
+    attrShort: 'HOT · © OpenStreetMap',
+    attrFull: 'Humanitarian OSM Team · © OpenStreetMap contributors'
+  },
+  cyclosm: {
+    name: 'CyclOSM',
+    url: (z, x, y) => `https://a.tile-cyclosm.openstreetmap.fr/cyclosm/${z}/${x}/${y}.png`,
+    attrShort: 'CyclOSM · © OpenStreetMap',
+    attrFull: 'CyclOSM · © OpenStreetMap contributors'
+  }
+};
+// currentStyle is owned by the state layer (declared above); load() runs now that STYLES exists.
+load();
+
+function loadTile(z, x, y) {
+  const key = `${currentStyle}/${z}/${x}/${y}`;
+  if (tileCache.has(key)) return tileCache.get(key);
+  const p = new Promise((res, rej) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => res(img);
+    img.onerror = () => rej(new Error('tile ' + key));
+    img.src = STYLES[currentStyle].url(z, x, y);
+  });
+  tileCache.set(key, p);
+  return p;
+}
+async function renderTilesTo(ctx, dx, dy, dw, dh, lat, lng, zoom) {
+  const c = lonLatToTile(lng, lat, zoom);
+  const hw = dw / 2 / TILE, hh = dh / 2 / TILE;
+  const minX = Math.floor(c.x - hw) - 1, maxX = Math.floor(c.x + hw) + 1;
+  const minY = Math.floor(c.y - hh) - 1, maxY = Math.floor(c.y + hh) + 1;
+  const proms = [];
+  for (let tx = minX; tx <= maxX; tx++)
+    for (let ty = minY; ty <= maxY; ty++) {
+      const max = Math.pow(2, zoom);
+      if (ty < 0 || ty >= max) continue;
+      const wx = ((tx % max) + max) % max;
+      proms.push(loadTile(zoom, wx, ty).then(img => ({ img, tx, ty })).catch(() => null));
+    }
+  const tiles = await Promise.all(proms);
+  ctx.save(); ctx.beginPath(); ctx.rect(dx, dy, dw, dh); ctx.clip();
+  for (const t of tiles) {
+    if (!t) continue;
+    const px = dx + dw / 2 + (t.tx - c.x) * TILE;
+    const py = dy + dh / 2 + (t.ty - c.y) * TILE;
+    ctx.drawImage(t.img, px, py, TILE, TILE);
+  }
+  ctx.restore();
+}
+function zoomForBounds(minLat, maxLat, minLng, maxLng, dw, dh) {
+  for (let z = 19; z >= 1; z--) {
+    const a = lonLatToTile(minLng, maxLat, z), b = lonLatToTile(maxLng, minLat, z);
+    if ((b.x - a.x) * TILE <= dw && (b.y - a.y) * TILE <= dh) return z;
+  }
+  return 1;
+}
+function projectAtZoom(lat, lng, cLat, cLng, zoom, dx, dy, dw, dh) {
+  const c = lonLatToTile(cLng, cLat, zoom), p = lonLatToTile(lng, lat, zoom);
+  return [dx + dw / 2 + (p.x - c.x) * TILE, dy + dh / 2 + (p.y - c.y) * TILE];
+}
+
+function getScreenAngle() {
+  const a = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+  return typeof a === 'number' ? a : 0;
+}
+
+// ── geolocation ──
+function startGeolocation() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.watchPosition(p => {
+    currentPosition = { lat: p.coords.latitude, lng: p.coords.longitude, alt: p.coords.altitude };
+    currentAccuracy = p.coords.accuracy;
+    $('coords').innerHTML = `${p.coords.latitude.toFixed(5)}°<br>${p.coords.longitude.toFixed(5)}°`;
+    if (p.coords.heading != null && !isNaN(p.coords.heading)) setHeading(p.coords.heading);
+  }, () => {}, { enableHighAccuracy: true, maximumAge: 1000 });
+}
+
+// ── compass ──
+// Build the rotating bezel: 72 ticks (every 5°), majors at cardinals with letters.
+
+(function buildBezel() {
+  const svg = document.getElementById('bezelSvg');
+  const cx = 50, cy = 50, ns = 'http://www.w3.org/2000/svg';
+  const ring = document.createElementNS(ns, 'circle');
+  ring.setAttribute('cx', cx); ring.setAttribute('cy', cy); ring.setAttribute('r', 47);
+  ring.setAttribute('fill', 'rgba(12,12,13,0.45)');
+  ring.setAttribute('stroke', 'rgba(120,118,110,0.4)'); ring.setAttribute('stroke-width', '0.6');
+  svg.appendChild(ring);
+  for (let d = 0; d < 360; d += 5) {
+    const major = d % 90 === 0, mid = d % 45 === 0;
+    const a = (d - 90) * Math.PI / 180;
+    const r1 = 47, r2 = major ? 39 : mid ? 42 : 44;
+    const ln = document.createElementNS(ns, 'line');
+    ln.setAttribute('x1', cx + Math.cos(a) * r1); ln.setAttribute('y1', cy + Math.sin(a) * r1);
+    ln.setAttribute('x2', cx + Math.cos(a) * r2); ln.setAttribute('y2', cy + Math.sin(a) * r2);
+    ln.setAttribute('stroke', major ? '#ffffff' : 'rgba(166,163,155,0.55)');
+    ln.setAttribute('stroke-width', major ? '1.2' : '0.6');
+    svg.appendChild(ln);
+  }
+  [['N', 0], ['E', 90], ['S', 180], ['W', 270]].forEach(([ch, d]) => {
+    const a = (d - 90) * Math.PI / 180, r = 31;
+    const tx = document.createElementNS(ns, 'text');
+    tx.setAttribute('x', cx + Math.cos(a) * r); tx.setAttribute('y', cy + Math.sin(a) * r);
+    tx.setAttribute('text-anchor', 'middle'); tx.setAttribute('dominant-baseline', 'central');
+    tx.setAttribute('font-family', "'Space Mono', monospace");
+    tx.setAttribute('font-size', ch === 'N' ? '9' : '7.5');
+    tx.setAttribute('font-weight', '700');
+    tx.setAttribute('fill', ch === 'N' ? '#ffffff' : '#a6a39b');
+    tx.textContent = ch;
+    svg.appendChild(tx);
+  });
+})();
+
+function setHeading(h) {
+  currentHeading = h;
+  const r = Math.round(h);
+  $('degVal').textContent = r;
+  $('degCard').textContent = card(h);
+  // Rotate bezel opposite to heading so the faced direction sits under the lubber line.
+  $('bezel').style.transform = `rotate(${-h}deg)`;
+}
+function compassHandler(e) {
+  let h = null;
+  if (e.webkitCompassHeading != null) h = e.webkitCompassHeading;
+  else if (e.alpha != null) h = (360 - e.alpha) % 360;
+  if (h != null) {
+    compassOn = true;
+    h = (h + getScreenAngle()) % 360;
+    if (h < 0) h += 360;
+    setHeading(h);
+  }
+}
+let compassOn = false;
+async function startCompass() {
+  try {
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      const res = await DeviceOrientationEvent.requestPermission();
+      if (res !== 'granted') { showCompassBlocked(); return; }
+    }
+    window.addEventListener('deviceorientationabsolute', compassHandler, true);
+    window.addEventListener('deviceorientation', compassHandler, true);
+    compassOn = true;
+  } catch (e) { showCompassBlocked(); }
+}
+function showCompassBlocked() {
+  const el = $('degCard'); if (el) el.textContent = 'TAP TO RETRY';
+}
+// tapping the compass re-requests orientation permission if it was denied
+(function () {
+  const cmp = document.querySelector('.compass');
+  if (cmp) cmp.addEventListener('click', () => { if (!compassOn) startCompass(); });
+})();
+
+// ── camera ──
+
+async function startCamera() {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode, width: { ideal: 4096 }, height: { ideal: 4096 } }, audio: false
+    });
+    video.srcObject = stream;
+  } catch (e) {
+    $('statusText').textContent = 'no camera';
+  }
+}
+
+// ── init (permission gate) ──
+
+// ── init (permission gate) ──
+async function init() {
+  $('gate').style.display = 'none';
+  $('statusText').textContent = 'recording';
+  await startCamera();
+  startGeolocation();
+  await startCompass();
+  $('shutter').disabled = false;
+}
+$('gateBtn').addEventListener('click', init);
+
+// ── capture ──
+$('shutter').addEventListener('click', () => {
+  const f = $('flash'); f.classList.remove('fire'); void f.offsetWidth; f.classList.add('fire');
+  const sh = $('shutter'); sh.classList.add('armed'); setTimeout(() => sh.classList.remove('armed'), 300);
+  const seq = nextSeq++;
+  const shot = { seq,
+    position: currentPosition ? { ...currentPosition } : null,
+    heading: currentHeading, accuracy: currentAccuracy, timestamp: Date.now() };
+  shots.push(shot);
+  saveShots();
+  refreshMapBtn();
+  showToast(`Saved <b>field-${String(seq).padStart(3,'0')}</b>`);
+  capturePhoto(shot);
+});
+
+// One toast for capture-confirm AND errors (no window.alert — dead/jarring in iOS PWA)
+function showToast(html, ms = 1800) {
+  const t = $('toast');
+  t.innerHTML = html;
+  t.classList.add('show'); clearTimeout(window._tt);
+  window._tt = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+async function capturePhoto(shot) {
+  const v = video;
+  if (!v.videoWidth) return; // no camera frame (e.g. permission denied)
+  const W = v.videoWidth, H = v.videoHeight;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  ctx.drawImage(v, 0, 0, W, H);
+
+  // metadata strip across the bottom
+  const pad = Math.round(W * 0.035);
+  const stripH = Math.round(H * 0.13);
+  const y0 = H - stripH;
+  const grad = ctx.createLinearGradient(0, y0 - stripH * 0.4, 0, H);
+  grad.addColorStop(0, 'rgba(12,12,13,0)');
+  grad.addColorStop(0.4, 'rgba(12,12,13,0.78)');
+  grad.addColorStop(1, 'rgba(12,12,13,0.92)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, y0 - stripH * 0.4, W, stripH * 1.4);
+  // accent hairline
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(pad, y0 + Math.round(stripH * 0.12), Math.round(W * 0.06), 3);
+
+  const big = Math.round(stripH * 0.66);
+  const lblSize = Math.round(stripH * 0.15);
+  const valSize = Math.round(stripH * 0.2);
+
+  // big sequence number (matches map pin)
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  ctx.fillStyle = '#ece9e1';
+  ctx.font = `600 ${big}px "Space Mono", monospace`;
+  const seqStr = String(shot.seq).padStart(3, '0');
+  ctx.fillText(seqStr, pad, y0 + Math.round(stripH * 0.82));
+  const seqW = ctx.measureText(seqStr).width;
+
+  const colX = pad + seqW + Math.round(W * 0.05);
+  const hdg = shot.heading != null ? `${Math.round(shot.heading)}° ${card(shot.heading)}` : '—';
+  const coords = shot.position
+    ? `${shot.position.lat.toFixed(5)}°, ${shot.position.lng.toFixed(5)}°`
+    : 'NO GPS FIX';
+  const ts = new Date(shot.timestamp).toLocaleString();
+
+  // two stacked fields: Position (top), Bearing (bottom)
+  const lblColor = 'rgba(236,233,225,0.55)';
+  const rowGap = Math.round(stripH * 0.42);
+  const topBase = y0 + Math.round(stripH * 0.5);
+  const botBase = topBase + rowGap;
+  const field = (x, base, label, value) => {
+    ctx.textAlign = 'left';
+    ctx.fillStyle = lblColor;
+    ctx.font = `600 ${lblSize}px "Space Mono", monospace`;
+    ctx.fillText(label, x, base - valSize - Math.round(stripH * 0.02));
+    ctx.fillStyle = '#ece9e1';
+    ctx.font = `500 ${valSize}px "Space Mono", monospace`;
+    ctx.fillText(value, x, base);
+  };
+  field(colX, topBase, 'POSITION', coords);
+  field(colX, botBase, 'BEARING', hdg);
+
+  // right-aligned timestamp, bottom
+  ctx.textAlign = 'right';
+  ctx.fillStyle = lblColor;
+  ctx.font = `600 ${lblSize}px "Space Mono", monospace`;
+  ctx.fillText(ts, W - pad, botBase);
+  ctx.textAlign = 'left';
+
+  const blob = await new Promise(res => cv.toBlob(res, 'image/jpeg', 0.92));
+  if (!blob) return;
+
+  // ── store a hard-downscaled thumbnail for printing (IndexedDB, fail-soft) ──
+  try {
+    const long = 160, scale = long / Math.max(W, H);
+    const tc = document.createElement('canvas');
+    tc.width = Math.round(W * scale); tc.height = Math.round(H * scale);
+    tc.getContext('2d').drawImage(cv, 0, 0, tc.width, tc.height);
+    const thumb = tc.toDataURL('image/jpeg', 0.5);
+    putThumb(shot.seq, thumb);   // async, unlimited (no 5MB cliff); a failure never breaks the capture
+  } catch (e) { /* thumbnail is best-effort */ }
+
+  const fname = `field-${seqStr}.jpg`;
+  const file = window.File ? new File([blob], fname, { type: 'image/jpeg' }) : null;
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fname;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+// ── flip ──
+$('flipBtn').addEventListener('click', () => {
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  startCamera();
+});
+
+function refreshMapBtn() {
+  const n = shots.length;
+  $('mapBtn').disabled = n === 0;
+  $('mapBtn').innerHTML = `Map <span class="num">(${n})</span>`;
+}
+
+// ============================================================
+// MAP (canvas, on screen)
+// ============================================================
+$('mapBtn').addEventListener('click', () => {
+  $('mapView').classList.add('active');
+  requestAnimationFrame(() => requestAnimationFrame(drawMap));
+});
+$('closeMapBtn').addEventListener('click', () => $('mapView').classList.remove('active'));
+
+// ============================================================
+// SETTINGS overlay — Theme / Data / Danger
+// ============================================================
+const THEMES = [
+  { key: '',          name: 'Mono',      sub: 'Neutral ink',  bg: '#0c0c0d', ac: '#ffffff' },
+  { key: 'blueprint', name: 'Blueprint', sub: 'Deep navy',    bg: '#0a1830', ac: '#5bc6ff' },
+  { key: 'bone',      name: 'Bone',      sub: 'Paper light',  bg: '#e9e5da', ac: '#9a5b34' }
+];
+// theme var is owned by the state layer (loaded via normalize)
+function applyTheme(k) {
+  theme = k;
+  if (k) document.body.setAttribute('data-theme', k); else document.body.removeAttribute('data-theme');
+  save();
+}
+applyTheme(theme);
+function renderSwatches() {
+  $('swatches').innerHTML = THEMES.map(t => `
+    <button class="swatch ${t.key === theme ? 'on' : ''}" data-k="${t.key}">
+      <span class="sw-prev" style="background:${t.bg}"><i style="background:${t.ac}"></i></span>
+      <span><span class="sw-name">${t.name}</span><span class="sw-sub">${t.sub}</span></span>
+    </button>`).join('');
+  $('swatches').querySelectorAll('.swatch').forEach(b => b.addEventListener('click', () => {
+    applyTheme(b.dataset.k); renderSwatches();
+  }));
+}
+function openSettings() { renderSwatches(); $('settings').classList.add('active');
+  document.body.classList.add('settings-open');
+  $('markBtn').classList.add('expanded'); $('markBtn').setAttribute('aria-expanded', 'true'); }
+function closeSettings() { $('settings').classList.remove('active');
+  document.body.classList.remove('settings-open');
+  $('markBtn').classList.remove('expanded'); $('markBtn').setAttribute('aria-expanded', 'false'); }
+$('markBtn').addEventListener('click', () => {
+  if ($('settings').classList.contains('active')) closeSettings(); else openSettings();
+});
+// header mark button toggles settings open/closed (splays in place, stays visible top-right)
+
+// CSV export (Data section — the backup story)
+function csvEscape(v){ v = v==null?'':String(v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
+$('exportBtn').addEventListener('click', () => {
+  const head = ['Photo','Seq','Latitude','Longitude','Heading','Cardinal','Accuracy_m','Timestamp_ISO'];
+  const rows = shots.map(s => [
+    `field-${String(s.seq).padStart(3,'0')}.jpg`, s.seq,
+    s.position ? s.position.lat.toFixed(6) : '', s.position ? s.position.lng.toFixed(6) : '',
+    s.heading != null ? Math.round(s.heading) : '', s.heading != null ? card(s.heading) : '',
+    s.accuracy != null ? Math.round(s.accuracy) : '', new Date(s.timestamp).toISOString()
+  ]);
+  const csv = [head, ...rows].map(r => r.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const fname = `field-camera_${new Date().toISOString().slice(0,10)}.csv`;
+  const file = window.File ? new File([blob], fname, { type: 'text/csv' }) : null;
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file] }).catch(()=>{}); return; }
+  const url = URL.createObjectURL(blob); const a = document.createElement('a');
+  a.href = url; a.download = fname; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+});
+$('importBtn').addEventListener('click', () => $('csvFile').click());
+
+// ── JSON backup — whole workspace, one file; restore runs through normalize() ──
+$('backupBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(currentState(), null, 2)], { type: 'application/json' });
+  const fname = `field-camera-backup_${new Date().toISOString().slice(0,10)}.json`;
+  const file = window.File ? new File([blob], fname, { type: 'application/json' }) : null;
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file] }).catch(()=>{}); return; }
+  const url = URL.createObjectURL(blob); const a = document.createElement('a');
+  a.href = url; a.download = fname; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+});
+$('restoreBtn').addEventListener('click', () => $('jsonFile').click());
+$('jsonFile').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      let raw = null; try { raw = JSON.parse(r.result); } catch (er) { throw new Error('Not a valid backup file'); }
+      const state = normalize(raw);                 // same migration path as load()
+      shots = state.shots; nextSeq = state.nextSeq;
+      currentStyle = state.settings.mapStyle; theme = state.settings.theme; printOpts = state.settings.printOpts;
+      save(state);
+      applyTheme(theme); syncStyleButtons(); syncToggles(); refreshMapBtn();
+      if ($('mapView').classList.contains('active')) drawMap();
+      closeSettings();
+    } catch (err) { showToast('Restore failed — ' + err.message, 3000); }
+    e.target.value = '';
+  };
+  r.readAsText(f);
+});
+$('csvFile').addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { try { importCsv(r.result); } catch (err) { showToast('Import failed — ' + err.message, 3000); } e.target.value = ''; };
+  r.readAsText(f);
+});
+function parseCsvLine(line){ const o=[]; let c='',q=false; for(let i=0;i<line.length;i++){const ch=line[i];
+  if(q){ if(ch==='"'){ if(line[i+1]==='"'){c+='"';i++;} else q=false; } else c+=ch; }
+  else { if(ch==='"')q=true; else if(ch===','){o.push(c);c='';} else c+=ch; } } o.push(c); return o; }
+function importCsv(text){
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length);
+  if (lines.length < 2) throw new Error('No rows');
+  const head = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase());
+  const ci = n => head.indexOf(n);
+  const iS=ci('seq'), iLa=ci('latitude'), iLn=ci('longitude'), iH=ci('heading'), iA=ci('accuracy_m'), iT=ci('timestamp_iso');
+  let maxSeq = 0, added = [];
+  for (let i=1;i<lines.length;i++){ const c=parseCsvLine(lines[i]); const seq=parseInt(c[iS],10); if(isNaN(seq))continue;
+    const la=parseFloat(c[iLa]), ln=parseFloat(c[iLn]);
+    added.push({ seq, position:(!isNaN(la)&&!isNaN(ln))?{lat:la,lng:ln,alt:null}:null,
+      heading: iH>=0&&c[iH]!==''?parseFloat(c[iH]):null, accuracy: iA>=0&&c[iA]!==''?parseFloat(c[iA]):null,
+      timestamp: iT>=0&&c[iT]?Date.parse(c[iT])||Date.now():Date.now() });
+    if(seq>maxSeq)maxSeq=seq;
+  }
+  if(!added.length) throw new Error('No valid rows');
+  // route through normalize() like any other load — CSV import isn't a bypass
+  const state = normalize({ v: SCHEMA_V, shots: added, nextSeq: Math.max(nextSeq, maxSeq+1),
+    settings: { mapStyle: currentStyle, theme, printOpts } });
+  shots = state.shots; nextSeq = state.nextSeq;
+  save(state); refreshMapBtn();
+  closeSettings();
+  if ($('mapView').classList.contains('active')) drawMap();
+}
+
+// Clear all (inline two-step confirm — no window.confirm)
+function armClear() {
+  $('clearWrap').innerHTML = `<span class="del-warn">Clear all ${shots.length} captures and reset numbering? Saved photos aren't affected.</span>
+    <div class="del-row"><button class="mini" id="clrCancel">Cancel</button><button class="mini danger filled" id="clrOk">Clear all</button></div>`;
+  $('clrCancel').addEventListener('click', resetClear);
+  $('clrOk').addEventListener('click', () => { shots = []; nextSeq = 1; saveShots(); clearThumbs(); refreshMapBtn(); resetClear(); });
+}
+function resetClear() {
+  $('clearWrap').innerHTML = '<button class="mini" id="clearBtn">Clear all captures</button>';
+  $('clearBtn').addEventListener('click', armClear);
+}
+$('clearBtn').addEventListener('click', armClear);
+
+function showShotInfo(shot, num) {
+  const hdg = shot.heading != null ? `${Math.round(shot.heading)}° ${card(shot.heading)}` : '—';
+  const ts = new Date(shot.timestamp).toLocaleString();
+  $('shotInfo').innerHTML = `
+    <div><div class="label">Shot ${num} · position</div>
+      <div class="v">${shot.position ? shot.position.lat.toFixed(6) + '°' : '—'}<br>${shot.position ? shot.position.lng.toFixed(6) + '°' : ''}</div></div>
+    <div><div class="label">Heading</div><div class="v">${hdg}</div>
+      <div class="label" style="margin-top:8px">Time</div><div class="v small">${ts}</div></div>
+    <div class="si-actions"><button class="mini" id="delShotBtn">Delete capture</button></div>`;
+  $('delShotBtn').addEventListener('click', () => armDelete(shot.seq));
+}
+function armDelete(seq) {
+  $('shotInfo').querySelector('.si-actions').innerHTML = `
+    <span class="del-warn">Delete shot ${String(seq).padStart(3,'0')}? The saved photo file isn't affected.</span>
+    <div class="del-row"><button class="mini" id="delCancel">Cancel</button>
+      <button class="mini danger filled" id="delConfirm">Delete</button></div>`;
+  $('delCancel').addEventListener('click', () => { const s = shots.find(x => x.seq === seq); if (s) showShotInfo(s, seq); });
+  $('delConfirm').addEventListener('click', () => {
+    shots = shots.filter(s => s.seq !== seq); saveShots(); deleteThumb(seq); refreshMapBtn();
+    $('shotInfo').innerHTML = `<div><div class="label">Deleted ${String(seq).padStart(3,'0')}</div><div class="v small">${shots.length} left</div></div>`;
+    drawMap();
+  });
+}
+
+async function drawMap() {
+  const canvas = $('mapCanvas');
+  const cont = canvas.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = cont.getBoundingClientRect();
+  const W = rect.width > 0 ? rect.width : window.innerWidth;
+  const H = rect.height > 0 ? rect.height : 400;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  await renderMapInto(ctx, W, H, true);
+  // click-to-select nearest pin
+  const located = shots.filter(s => s.position);
+  if (located.length) {
+    const view = drawMap._view;
+    canvas.onclick = (e) => {
+      const r = canvas.getBoundingClientRect();
+      const cx = e.clientX - r.left, cy = e.clientY - r.top;
+      let near = null, nd = Infinity;
+      located.forEach((s) => {
+        const [x, y] = projectAtZoom(s.position.lat, s.position.lng, view.cLat, view.cLng, view.zoom, 0, 0, W, H);
+        const d = Math.hypot(x - cx, y - cy); if (d < nd) { nd = d; near = s; }
+      });
+      if (near && nd < 44) showShotInfo(near, near.seq);
+    };
+    showShotInfo(located[located.length - 1], located[located.length - 1].seq);
+  } else {
+    $('shotInfo').innerHTML = `<div><div class="label">${shots.length} capture${shots.length===1?'':'s'}</div><div class="v small">${shots.length ? 'No GPS on captures' : 'None yet'}</div></div>`;
+  }
+}
+
+// shared renderer for screen + print; returns the view used
+async function renderMapInto(ctx, W, H, dark) {
+  ctx.fillStyle = dark ? '#0c0c0d' : '#ffffff'; ctx.fillRect(0, 0, W, H);
+  const located = shots.filter(s => s.position);
+  if (!located.length) { drawMap._view = { cLat: 0, cLng: 0, zoom: 1 }; return; }
+
+  let minLat = Math.min(...located.map(s => s.position.lat));
+  let maxLat = Math.max(...located.map(s => s.position.lat));
+  let minLng = Math.min(...located.map(s => s.position.lng));
+  let maxLng = Math.max(...located.map(s => s.position.lng));
+  const pLat = Math.max((maxLat - minLat) * 0.4, 0.0008);
+  const pLng = Math.max((maxLng - minLng) * 0.4, 0.0008);
+  minLat -= pLat; maxLat += pLat; minLng -= pLng; maxLng += pLng;
+  const cLat = (minLat + maxLat) / 2, cLng = (minLng + maxLng) / 2;
+  const zoom = zoomForBounds(minLat, maxLat, minLng, maxLng, W, H);
+  drawMap._view = { cLat, cLng, zoom };
+
+  await renderTilesTo(ctx, 0, 0, W, H, cLat, cLng, zoom);
+  if (dark) { ctx.fillStyle = 'rgba(12,12,13,0.42)'; ctx.fillRect(0, 0, W, H); }
+  const project = (lat, lng) => projectAtZoom(lat, lng, cLat, cLng, zoom, 0, 0, W, H);
+
+  const inkLine = dark ? 'rgba(236,233,225,0.4)' : 'rgba(0,0,0,0.55)';
+  const pinFill = dark ? '#ece9e1' : '#ffffff';
+  const pinEdge = dark ? '#0c0c0d' : '#000000';
+  const coneCol = dark ? '#ffffff' : '#000000';
+  const coneFill = dark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.18)';
+
+  if (located.length > 1) {
+    ctx.strokeStyle = inkLine; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    located.forEach((s, i) => { const [x, y] = project(s.position.lat, s.position.lng); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+  located.forEach((shot) => {
+    const [x, y] = project(shot.position.lat, shot.position.lng);
+    if (shot.heading != null) {
+      const rad = (shot.heading - 90) * Math.PI / 180, spread = 0.35, len = 52;
+      ctx.fillStyle = coneFill;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, len, rad - spread, rad + spread); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = coneCol; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(rad) * len, y + Math.sin(rad) * len); ctx.stroke();
+    }
+    ctx.fillStyle = pinFill; ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = pinEdge; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = pinEdge; ctx.font = '700 12px "Space Mono", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(shot.seq, x, y);
+  });
+}
+
+// ── style picker ──
+function syncStyleButtons() {
+  document.querySelectorAll('.style-seg').forEach(b => b.classList.toggle('active', b.dataset.style === currentStyle));
+}
+syncStyleButtons();
+document.querySelectorAll('.style-seg').forEach(btn => btn.addEventListener('click', () => {
+  if (btn.dataset.style === currentStyle) return;
+  currentStyle = btn.dataset.style;
+  save();
+  syncStyleButtons();
+  if ($('mapView').classList.contains('active')) drawMap();
+}));
+
+// ============================================================
+// PRINT — options-driven: Map (p1) / Table (p2) / Photos grid (p3)
+// ============================================================
+// printOpts var is owned by the state layer (loaded via normalize)
+function syncToggles() {
+  $('tgMap').classList.toggle('on', printOpts.map);
+  $('tgTable').classList.toggle('on', printOpts.table);
+  $('tgPhotos').classList.toggle('on', printOpts.photos);
+}
+['tgMap','tgTable','tgPhotos'].forEach(id => $(id).addEventListener('click', () => {
+  const k = $(id).dataset.k; printOpts[k] = !printOpts[k];
+  save();
+  syncToggles();
+}));
+
+// Build the print sheet pages once — shared by preview AND print (no drift).
+async function buildSheetPages() {
+  const located = shots.filter(s => s.position);
+  const dstr = new Date().toLocaleString();
+  const pages = [];
+  let head = `<div class="print-wordmark">Field Camera.</div>
+    <div class="print-eyebrow">Position + bearing · capture record</div>
+    <hr class="print-rule">
+    <div class="print-meta">${shots.length} capture${shots.length===1?'':'s'} &nbsp;·&nbsp; ${located.length} located &nbsp;·&nbsp; ${dstr}</div>`;
+
+  if (printOpts.map) {
+    let mapImg = '';
+    if (located.length) {
+      const MW = 1400, MH = 1000;
+      const off = document.createElement('canvas'); off.width = MW; off.height = MH;
+      await renderMapInto(off.getContext('2d'), MW, MH, false);
+      mapImg = off.toDataURL('image/jpeg', 0.92);
+    }
+    pages.push(head + (mapImg
+      ? `<img class="printMap" src="${mapImg}" alt="capture map"><div class="print-attr">${STYLES[currentStyle].attrFull}</div>`
+      : `<div class="print-meta">No located captures to map.</div>`));
+    head = '';
+  }
+  if (printOpts.table) {
+    const rows = shots.map(s => {
+      const hdg = s.heading != null ? `${Math.round(s.heading)}° ${card(s.heading)}` : '—';
+      const pos = s.position ? `${s.position.lat.toFixed(6)}, ${s.position.lng.toFixed(6)}` : 'no fix';
+      return `<tr><td>${String(s.seq).padStart(3,'0')}</td><td>field-${String(s.seq).padStart(3,'0')}.jpg</td><td>${pos}</td><td>${hdg}</td><td>${new Date(s.timestamp).toLocaleString()}</td></tr>`;
+    }).join('');
+    pages.push((head || '') + `<div class="print-wordmark" style="font-size:14pt">Captures</div><hr class="print-rule">
+      <table><thead><tr><th>No.</th><th>File</th><th>Coordinates</th><th>Bearing</th><th>Time</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="5">No captures.</td></tr>'}</tbody></table>`);
+    head = '';
+  }
+  if (printOpts.photos) {
+    const tmap = await getAllThumbs();
+    const withThumb = shots.filter(s => tmap[s.seq]);
+    const cells = withThumb.map(s => {
+      const hdg = s.heading != null ? `${Math.round(s.heading)}° ${card(s.heading)}` : '—';
+      return `<figure class="pcell"><img src="${tmap[s.seq]}" alt="${s.seq}"><figcaption>${String(s.seq).padStart(3,'0')} · ${hdg}</figcaption></figure>`;
+    }).join('');
+    const missing = shots.length - withThumb.length;
+    pages.push((head || '') + `<div class="print-wordmark" style="font-size:14pt">Photos</div><hr class="print-rule">
+      ${withThumb.length ? `<div class="pgrid">${cells}</div>` : '<div class="print-meta">No stored photo thumbnails.</div>'}
+      ${missing > 0 ? `<div class="print-attr">${missing} capture${missing===1?'':'s'} without a stored thumbnail (photo is on your device).</div>` : ''}`);
+  }
+  return pages;
+}
+
+async function buildAndPrint() {
+  const btn = $('printFromSettings');
+  const old = btn.innerHTML; btn.disabled = true;
+  try {
+    const pages = await buildSheetPages();
+    if (!pages.length) { showToast('Nothing selected — enable Map, Table, or Photos', 2600); return; }
+    $('printSheet').innerHTML = pages.join('<div class="print-break"></div>');
+    await new Promise(r => setTimeout(r, 400)); // let images decode
+    window.print();
+  } catch (e) {
+    showToast('Print prep failed — ' + e.message, 3000);
+  } finally {
+    btn.innerHTML = old; btn.disabled = false;
+  }
+}
+$('printFromSettings').addEventListener('click', () => buildAndPrint());
+
+// ── Preview overlay — renders the SAME sheet pages onto on-screen "paper" ──
+async function openPreview() {
+  const btn = $('previewBtn'); const old = btn.innerHTML; btn.disabled = true; btn.textContent = '…';
+  try {
+    const pages = await buildSheetPages();
+    if (!pages.length) { showToast('Nothing selected — enable Map, Table, or Photos', 2600); return; }
+    $('previewPages').innerHTML = pages.map((p, i) =>
+      `<div class="paper"><div class="paper-n">Page ${i+1}</div><div class="print-sheet">${p}</div></div>`).join('');
+    $('preview').classList.add('active');
+  } catch (e) { showToast('Preview failed — ' + e.message, 3000); }
+  finally { btn.innerHTML = old; btn.disabled = false; }
+}
+$('previewBtn').addEventListener('click', openPreview);
+$('previewClose').addEventListener('click', () => $('preview').classList.remove('active'));
+$('previewPrint').addEventListener('click', () => { $('preview').classList.remove('active'); buildAndPrint(); });
+
+// resize redraw
+window.addEventListener('resize', () => { if ($('mapView').classList.contains('active')) { clearTimeout(window._rt); window._rt = setTimeout(drawMap, 200); } });
+window.addEventListener('orientationchange', () => { if ($('mapView').classList.contains('active')) setTimeout(drawMap, 300); });
+
+syncToggles();
+refreshMapBtn();
+
+// Register the service worker for offline use (fail-silent; no effect on file:// or unsupported browsers)
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
