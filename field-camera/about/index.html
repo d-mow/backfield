@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0c0c0d" />
+
+<!-- Primary -->
+<title>Field Camera — a photo tool that records position &amp; bearing, for iPhone</title>
+<meta name="description" content="Field Camera is a minimal iPhone camera that burns GPS position and compass bearing into every photo, numbers them in sequence, and plots them on a map. Built for site documentation, surveying, and fieldwork. Offline, no account." />
+<link rel="canonical" href="https://backfield.io/field-camera/about/" />
+<meta name="author" content="Backfield" />
+<meta name="robots" content="index, follow" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://backfield.io/field-camera/about/" />
+<meta property="og:site_name" content="Backfield" />
+<meta property="og:title" content="Field Camera — records position &amp; bearing" />
+<meta property="og:description" content="A minimal iPhone camera that records where you stood and which way you faced on every photo, then plots them on a map. Offline, no account." />
+<meta property="og:image" content="https://backfield.io/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Field Camera, a minimal position-and-bearing camera app for iPhone." />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Field Camera — records position &amp; bearing" />
+<meta name="twitter:description" content="A minimal iPhone camera that records where you stood and which way you faced, then plots it on a map." />
+<meta name="twitter:image" content="https://backfield.io/og.png" />
+
+<!-- Icons -->
+<link rel="icon" href="/field-camera/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/field-camera/apple-touch-icon.png" />
+
+<!-- Structured data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Field Camera",
+  "url": "https://backfield.io/field-camera/",
+  "description": "A minimal iPhone camera that records the GPS position and compass bearing of every photo, numbers them in sequence, and plots them on a map. Built for site documentation, surveying, and fieldwork.",
+  "applicationCategory": "Photography",
+  "operatingSystem": "iOS",
+  "featureList": [
+    "GPS position and compass bearing burned into every photo",
+    "Sequential filenames that match numbered map pins",
+    "Offline map with numbered pins and direction cones",
+    "Print map, data table, and photo contact sheet",
+    "JSON backup and CSV export",
+    "Offline-first, no account required"
+  ],
+  "audience": {
+    "@type": "Audience",
+    "audienceType": "Surveyors, site documentation, and fieldwork"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Backfield",
+    "url": "https://backfield.io/"
+  }
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,600..800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg:        #0c0c0d;    /* mono — the app's default theme */
+    --bg-2:      #141416;    /* lifted */
+    --line:      rgba(236,233,225,0.14);
+    --line-soft: rgba(236,233,225,0.07);
+    --ink:       #ece9e1;    /* warm white */
+    --ink-mid:   #a6a39b;
+    --ink-dim:   #6b6862;
+    --accent:    #ffffff;    /* pure white — limited roles */
+    --display:   'Archivo', system-ui, sans-serif;
+    --mono:      'Space Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--bg); color: var(--ink); min-height: 100vh; }
+  body {
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--ink); color: var(--bg); }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px; }
+
+  /* Top bar */
+  .top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-bottom: 18px; border-bottom: 1px solid var(--line);
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-dim);
+  }
+  .top a { border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+  .top a:hover { border-color: var(--ink-dim); }
+
+  /* === HERO === */
+  .hero { padding: 56px 0 40px; text-align: center; }
+  .hero-mark { width: 68px; height: 68px; color: var(--ink); margin: 0 auto 24px; display: block; }
+  .hero-eyebrow {
+    font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--ink-dim); margin-bottom: 16px;
+  }
+  .hero-name {
+    font-family: var(--display); font-weight: 800; font-stretch: 125%;
+    font-size: clamp(40px, 10vw, 92px); line-height: 1.0; letter-spacing: -0.01em;
+    text-transform: uppercase; color: var(--ink);
+  }
+  .hero-name .dot { color: var(--accent); }
+  .hero-tag {
+    margin: 18px auto 0; font-family: var(--mono);
+    font-size: clamp(15px, 2.5vw, 19px); line-height: 1.5; color: var(--ink-mid);
+    max-width: 40ch;
+  }
+
+  /* CTA */
+  .cta-row { margin-top: 32px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .cta {
+    display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 4px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase;
+    font-weight: 700; transition: background 0.2s, color 0.2s, transform 0.2s, border-color 0.2s;
+  }
+  .cta-primary { background: var(--accent); color: var(--bg); }
+  .cta-primary:hover { transform: translateY(-1px); }
+  .cta-secondary { border: 1px solid var(--line); color: var(--ink-mid); }
+  .cta-secondary:hover { border-color: var(--ink-mid); color: var(--ink); }
+  .cta-arr { display: inline-block; transition: transform 0.2s; }
+  .cta:hover .cta-arr { transform: translateX(4px); }
+
+  /* === SECTIONS === */
+  section { padding: 64px 0 0; }
+  .section-label {
+    font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--ink-dim);
+    margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
+  }
+  .section h2 {
+    font-family: var(--display); font-weight: 700; font-stretch: 110%;
+    font-size: clamp(28px, 5.5vw, 46px); line-height: 1.02; letter-spacing: -0.01em;
+    text-transform: uppercase; color: var(--ink); margin-bottom: 20px;
+  }
+  .section p { color: var(--ink-mid); margin-bottom: 16px; max-width: 62ch; }
+  .section p strong { color: var(--ink); font-weight: 700; }
+
+  /* Features list */
+  .feat { list-style: none; padding: 0; margin: 0; }
+  .feat li {
+    padding: 22px 0; border-bottom: 1px solid var(--line-soft);
+    display: grid; grid-template-columns: 56px 1fr; gap: 20px; align-items: baseline;
+  }
+  .feat li:last-child { border-bottom: none; }
+  .feat-num { font-family: var(--display); font-weight: 800; font-stretch: 125%; font-size: 22px; color: var(--ink-dim); text-align: center; }
+  .feat-body h3 {
+    font-family: var(--display); font-weight: 700; font-stretch: 110%; font-size: 22px;
+    letter-spacing: 0.0em; text-transform: uppercase; color: var(--ink); margin-bottom: 4px;
+  }
+  .feat-body p { color: var(--ink-mid); font-size: 14px; margin: 0; max-width: none; }
+
+  /* Install */
+  .install { background: var(--bg-2); border: 1px solid var(--line); border-radius: 6px; padding: 24px; margin-top: 24px; }
+  .install ol { list-style: none; counter-reset: step; padding: 0; }
+  .install li { counter-increment: step; padding: 10px 0; padding-left: 40px; position: relative; color: var(--ink-mid); }
+  .install li::before {
+    content: counter(step, decimal-leading-zero); position: absolute; left: 0; top: 11px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--accent); width: 28px; text-align: left;
+  }
+  .install strong { color: var(--ink); font-weight: 700; }
+
+  /* Honest */
+  .honest { margin-top: 24px; padding: 24px; border: 1px dashed var(--line); border-radius: 6px; }
+  .honest ul { list-style: none; padding: 0; margin: 0; }
+  .honest li { padding: 6px 0; padding-left: 20px; color: var(--ink-mid); font-size: 14px; position: relative; }
+  .honest li::before { content: '—'; position: absolute; left: 0; color: var(--ink-dim); }
+
+  /* Footer */
+  footer {
+    margin-top: 80px; padding: 24px 0; border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-dim);
+  }
+  footer a { border-bottom: 1px solid transparent; transition: border-color 0.2s, color 0.2s; }
+  footer a:hover { border-color: var(--ink); color: var(--ink); }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 16px; }
+    .hero { padding: 32px 0 24px; }
+    .cta-row { flex-direction: column; align-items: stretch; }
+    .cta { justify-content: center; }
+    section { padding: 48px 0 0; }
+    .feat li { grid-template-columns: 40px 1fr; gap: 14px; }
+    .feat-num { font-size: 20px; }
+    .feat-body h3 { font-size: 20px; }
+    footer { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="wrap">
+
+    <div class="top">
+      <a href="/field-camera/">← Open Field Camera</a>
+      <a href="/">Backfield.io</a>
+    </div>
+
+    <!-- HERO -->
+    <header class="hero">
+      <svg class="hero-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10Z"/><path d="M12 11 15 7" stroke-width="2.2"/></svg>
+      <div class="hero-eyebrow">A Backfield app</div>
+      <h1 class="hero-name">Field Camera<span class="dot">.</span></h1>
+      <p class="hero-tag">
+        A minimal camera that records where you stood and which way you faced — burned into every photo, plotted on a map.
+      </p>
+
+      <p class="sr-only">
+        Field Camera is a minimal position-and-bearing camera app for iPhone. Every photo you take has its GPS coordinates and compass heading burned directly into the image, and is named in a running sequence — field-001.jpg, field-002.jpg — so a filename always matches its numbered pin on the map. It plots each capture on an offline map with a numbered pin and a direction cone showing which way the camera was pointed. You can print the map, a data table of coordinates and bearings, and a contact sheet of the photos, and back the whole workspace up as a single JSON file or export a CSV. It is a Progressive Web App: it installs to your iPhone home screen from Safari, works offline, and needs no account. Built by Backfield, a small software studio, for site documentation, surveying, real-estate, trail mapping, and anyone who needs to remember exactly where they stood and which way they were facing.
+      </p>
+
+      <div class="cta-row">
+        <a class="cta cta-primary" href="/field-camera/">
+          Open Field Camera <span class="cta-arr">→</span>
+        </a>
+        <a class="cta cta-secondary" href="#install">
+          How to install
+        </a>
+      </div>
+    </header>
+
+    <!-- What it is -->
+    <section>
+      <div class="section-label">01 · What it is</div>
+      <h2>A camera that remembers where.</h2>
+      <p>
+        Field Camera is for people who take photos in the field and need to know, later, exactly where each one was taken and which way it was pointed. Every shot records its GPS position and compass bearing and burns them right into the image. <strong>That's the whole idea.</strong>
+      </p>
+      <p>
+        Each photo is numbered in a running sequence — <strong>field-001</strong>, <strong>field-002</strong> — and that same number is the pin on the map. The number never resets, so a filename always points to one place on one map. Built by someone who documents sites for a living.
+      </p>
+    </section>
+
+    <!-- What it does -->
+    <section>
+      <div class="section-label">02 · What it does</div>
+      <h2>The whole feature list.</h2>
+      <ol class="feat">
+        <li>
+          <div class="feat-num">01</div>
+          <div class="feat-body">
+            <h3>Capture</h3>
+            <p>Point, shoot. The photo saves with GPS coordinates, compass bearing, and a timestamp burned into a strip along the bottom. Nothing to fill in.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">02</div>
+          <div class="feat-body">
+            <h3>Sequence</h3>
+            <p>Every capture gets the next number in line. The number is permanent — deleting a shot leaves a gap rather than renumbering — so field-014 always means the same photo and the same pin.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">03</div>
+          <div class="feat-body">
+            <h3>Map</h3>
+            <p>Every located capture plots on an offline map as a numbered pin with a cone showing which way the camera faced. Tap a pin to review or delete it.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">04</div>
+          <div class="feat-body">
+            <h3>Print</h3>
+            <p>Print the map, a data table of every coordinate and bearing, and a contact sheet of the photos — any combination. Preview the sheet on screen first.</p>
+          </div>
+        </li>
+        <li>
+          <div class="feat-num">05</div>
+          <div class="feat-body">
+            <h3>Back up</h3>
+            <p>Export the whole workspace as one JSON file to restore later, or a CSV to open in Excel, Numbers, or Sheets. Your call, your file.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- How to install -->
+    <section id="install">
+      <div class="section-label">03 · How to install</div>
+      <h2>Add to home screen.</h2>
+      <p>
+        Field Camera is a Progressive Web App — it runs in your iPhone's browser, but you can install it to your home screen so it opens like a native app. Nothing to download from the App Store, and it works offline once installed.
+      </p>
+
+      <div class="install">
+        <ol>
+          <li>Open <strong>backfield.io/field-camera</strong> in <strong>Safari</strong> on your iPhone</li>
+          <li>Tap the <strong>Share</strong> button at the bottom of the screen</li>
+          <li>Scroll down and tap <strong>Add to Home Screen</strong></li>
+          <li>Tap <strong>Add</strong> in the top right</li>
+        </ol>
+      </div>
+
+      <p style="margin-top: 16px; font-size: 13px;">
+        It appears as a regular app icon, opens full-screen, and asks for camera, location, and compass access the first time — all three are needed to record a photo with its position and bearing.
+      </p>
+    </section>
+
+    <!-- The honest part -->
+    <section>
+      <div class="section-label">04 · The honest part</div>
+      <h2>What it isn't.</h2>
+      <p>
+        Some things this app does not do, on purpose — and a couple of real limits worth knowing:
+      </p>
+      <div class="honest">
+        <ul>
+          <li>No accounts, no logins, no cloud sync — your captures live on your device</li>
+          <li>No editing, filters, or albums — it's a recording tool, not a photo app</li>
+          <li>The map uses volunteer OpenStreetMap tiles — fine for personal fieldwork, not heavy commercial traffic</li>
+          <li>Photos save to your camera roll on capture; the JSON backup holds the map data, not the full-resolution images</li>
+          <li>Compass bearing is only as good as your phone's magnetometer — calibrate it if a reading looks off</li>
+          <li>Built and tested for iPhone — it may run elsewhere, but that's not what it's for</li>
+        </ul>
+      </div>
+      <p style="margin-top: 20px;">
+        <strong>Free to use.</strong> Made by Dan at <a href="/" style="color: var(--ink); border-bottom: 1px solid var(--ink); font-weight: 700;">Backfield</a>, a small studio.
+      </p>
+    </section>
+
+    <footer>
+      <span>© 2026 Backfield · A small studio</span>
+      <span><a href="mailto:dan@backfield.io">dan@backfield.io</a></span>
+    </footer>
+
+  </div>
+
+</body>
+</html>
