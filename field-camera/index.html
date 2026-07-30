@@ -18,28 +18,28 @@
      Space Mono for labels + numerals, single cyan accent. */
   :root {
     /* Mono — default (screen affordance: mono is the default per skill) */
-    --bg:        #0c0c0d;
-    --bg-soft:   #16161a;
-    --line:      rgba(236,233,225,0.13);
-    --line-soft: rgba(236,233,225,0.07);
-    --ink:       #ece9e1;
-    --ink-mid:   #a6a39b;
-    --ink-dim:   #6b6862;
-    --accent:    #ffffff;
+    --bg:        #0d0d0c;
+    --bg-soft:   #181716;
+    --line:      rgba(235,233,229,0.13);
+    --line-soft: rgba(235,233,229,0.07);
+    --ink:       #ebe9e5;
+    --ink-mid:   #a6a296;
+    --ink-dim:   #736f64;
+    --accent:    #f7f7f7;
     --display:   'Archivo', system-ui, sans-serif;
     --num:       'Space Mono', ui-monospace, monospace;
     --mono:      'Space Mono', ui-monospace, monospace;
   }
   /* Named themes — keys stable forever; only display names may change */
   body[data-theme="blueprint"] {
-    --bg:#0a1830; --bg-soft:#0e1d3a;
-    --line:rgba(220,230,245,0.13); --line-soft:rgba(220,230,245,0.07);
-    --ink:#dce6f5; --ink-mid:#8a93a8; --ink-dim:#5a6278; --accent:#5bc6ff;
+    --bg:#14171b; --bg-soft:#181c20;
+    --line:rgba(197,200,205,0.13); --line-soft:rgba(197,200,205,0.07);
+    --ink:#c5c8cd; --ink-mid:#868e98; --ink-dim:#5f656d; --accent:#8a93a0;
   }
   body[data-theme="bone"] {
-    --bg:#e9e5da; --bg-soft:#dedace;
-    --line:rgba(26,24,19,0.18); --line-soft:rgba(26,24,19,0.09);
-    --ink:#1a1813; --ink-mid:#5a564b; --ink-dim:#8a8577; --accent:#9a5b34;
+    --bg:#e6e8ea; --bg-soft:#d5d9dc;
+    --line:rgba(26,31,35,0.18); --line-soft:rgba(26,31,35,0.09);
+    --ink:#1a1f23; --ink-mid:#56626c; --ink-dim:#67747e; --accent:#35648d;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); }
@@ -55,12 +55,16 @@
   header.top { position: absolute; top: 0; left: 0; right: 0; z-index: 35;
     padding: max(env(safe-area-inset-top), 14px) 20px 12px;
     display: flex; justify-content: space-between; align-items: baseline;
-    background: linear-gradient(to bottom, rgba(12,12,13,0.85), rgba(12,12,13,0)); }
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 85%, transparent), transparent); }
   body.settings-open header.top { background: var(--bg); z-index: 50; }
   .brand { font-family: var(--display); font-weight: 800; font-stretch: 125%; font-size: 16px; line-height: 1; letter-spacing: -0.01em; text-transform: uppercase; white-space: nowrap; }
   .brand .dot { color: var(--accent); }
   .brand-sub { font-family: var(--mono); font-size: 8px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-dim); margin-top: 3px; }
   .status { text-align: right; font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-mid); }
+  .held { display: none; margin-left: 8px; font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 2px; padding: 2px 6px; }
+  .held.show { display: inline-block; }
   .status .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 6px; vertical-align: middle; animation: pulse 2s infinite; }
   @keyframes pulse { 50% { opacity: 0.3; } }
   .masthead { display: flex; align-items: center; gap: 11px; }
@@ -112,6 +116,21 @@
   .set-input::placeholder { color: var(--ink-dim); }
   .set-input:focus { outline: none; border-color: var(--ink-mid); }
   .mini.wide { width: 100%; text-align: center; padding: 13px; }
+  .storage-bar { height: 3px; background: var(--line); border-radius: 2px; margin-top: 12px; overflow: hidden; }
+  .storage-bar span { display: block; height: 100%; width: 0; background: var(--ink-mid); transition: width .3s; }
+  .storage-bar span.warn { background: var(--accent); }
+  .seg { display: flex; gap: 6px; }
+  .seg button { flex: 1; background: none; border: 1px solid var(--line); border-radius: 2px;
+    color: var(--ink-mid); font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
+    text-transform: uppercase; padding: 11px 6px; transition: border-color .12s, color .12s; }
+  .seg button.on { border-color: var(--ink); color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  /* busy state with real progress — the sheet build is staged, so show the stage */
+  .mini.busy { position: relative; overflow: hidden; color: var(--ink-mid); }
+  .mini.busy .bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 0;
+    background: var(--accent); transition: width .25s ease; }
+  .mini.busy .barlabel { position: relative; z-index: 1; }
+  @keyframes bfPulse { 0%,100% { opacity: 1 } 50% { opacity: .45 } }
+  .mini.busy .barlabel { animation: bfPulse 1.1s ease-in-out infinite; }
   .bf-link { display: inline-block; margin-top: 10px; font-family: var(--mono); font-size: 10px;
     letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink);
     border-bottom: 1px solid var(--line); padding-bottom: 3px; text-decoration: none; }
@@ -150,22 +169,18 @@
   .pv-pages { display: flex; flex-direction: column; gap: 18px; align-items: center; }
   .pv-note { text-align: center; font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; color: var(--ink-mid); margin-top: 16px; }
   /* on-screen "paper" — mirrors the printed sheet (dark ink on white) */
-  .paper { width: 100%; max-width: 460px; background: #fff; color: #000; padding: 22px 20px; position: relative; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+  .paper { width: 100%; max-width: 640px; aspect-ratio: 17 / 11; background: #fff; color: #000; padding: 26px 30px; position: relative; box-shadow: 0 8px 30px rgba(0,0,0,0.4); overflow: hidden; }
   .paper-n { position: absolute; top: -14px; left: 0; font-family: var(--mono); font-size: 8px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-mid); }
   .paper .print-sheet { font-family: 'Space Mono', monospace; font-size: 9pt; line-height: 1.4; color: #000; }
   .paper .print-wordmark { font-family: 'Archivo', sans-serif; font-weight: 800; font-stretch: 125%; font-size: 19pt; line-height: 1.05; letter-spacing: -0.01em; text-transform: uppercase; }
   .paper .print-eyebrow { font-size: 7.5pt; letter-spacing: 0.24em; text-transform: uppercase; margin: 4pt 0 0; }
   .paper .print-rule { border: 0; border-top: 1.5pt solid #000; margin: 8pt 0; }
   .paper .print-meta { font-size: 8pt; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 10pt; }
-  .paper .printMap { width: 100%; height: auto; border: 0.5pt solid #000; display: block; }
+  .paper .printMap { width: 100%; max-height: 60vh; height: auto; object-fit: contain; border: 0.5pt solid #000; display: block; }
   .paper .print-attr { font-size: 7pt; margin-top: 5pt; }
-  .paper .print-sheet table { border-collapse: collapse; width: 100%; margin-top: 6pt; }
-  .paper .print-sheet th, .paper .print-sheet td { border: 0.5pt solid #000; padding: 4pt 6pt; text-align: left; font-variant-numeric: tabular-nums; }
-  .paper .print-sheet th { font-size: 7.5pt; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; }
-  .paper .print-sheet td { font-size: 8.5pt; }
-  .paper .pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6pt; margin-top: 6pt; }
+  .paper .pgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6pt; margin-top: 6pt; }
   .paper .pcell { border: 0.5pt solid #000; margin: 0; }
-  .paper .pcell img { width: 100%; display: block; }
+  .paper .pcell img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
   .paper .pcell figcaption { font-family: 'Space Mono', monospace; font-size: 7.5pt; padding: 3pt 4pt; border-top: 0.5pt solid #000; }
 
   /* VIEWFINDER */
@@ -186,7 +201,7 @@
   /* minimal readout */
   .readout { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
     padding: 28px 20px 18px;
-    background: linear-gradient(to top, rgba(12,12,13,0.92), rgba(12,12,13,0.5) 55%, rgba(12,12,13,0));
+    background: linear-gradient(to top, color-mix(in srgb, var(--bg) 92%, transparent), color-mix(in srgb, var(--bg) 50%, transparent) 55%, transparent);
     display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; pointer-events: none; }
   .readout .col { display: flex; flex-direction: column; gap: 10px; }
   .readout .v { font-family: var(--num); font-size: 16px; line-height: 1.2; font-variant-numeric: tabular-nums; }
@@ -302,7 +317,7 @@
   /* ===== PRINT (Backfield convention) ===== */
   @media screen { .print-only { display: none !important; } }
   @media print {
-    @page { margin: 14mm 12mm; }
+    @page { size: 17in 11in; margin: 12mm; }
     :root { --bg:#fff; --ink:#000; --ink-mid:#2a2a2a; --ink-dim:#555; --line:#000; --line-soft:#999; --accent:#000; }
     html, body { background:#fff !important; color:#000 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; margin:0; padding:0; overflow:visible !important; height:auto !important; }
     #app { position: static !important; display:block !important; }
@@ -316,18 +331,13 @@
     .print-eyebrow { font-size:7.5pt; letter-spacing:0.24em; text-transform:uppercase; color:#000; margin:4pt 0 0; }
     .print-rule { border:0; border-top:1.5pt solid #000; margin:8pt 0; }
     .print-meta { font-size:8pt; letter-spacing:0.16em; text-transform:uppercase; margin-bottom:10pt; }
-    .printMap { width:100%; height:auto; border:0.5pt solid #000; display:block; }
+    .printMap { width:100%; max-height:6.5in; height:auto; object-fit:contain; border:0.5pt solid #000; display:block; }
     .print-attr { font-size:7pt; color:#000; margin-top:5pt; }
-    .print-sheet table { border-collapse:collapse; width:100%; margin-top:6pt; }
-    .print-sheet th, .print-sheet td { border:0.5pt solid #000; padding:4pt 6pt; font-variant-numeric:tabular-nums; text-align:left; }
-    .print-sheet th { font-size:7.5pt; letter-spacing:0.16em; text-transform:uppercase; font-weight:700; }
-    .print-sheet td { font-size:9pt; }
     .print-break { break-before:page; page-break-before:always; }
-    .print-sheet tr { break-inside:avoid; page-break-inside:avoid; }
     /* photo contact grid */
-    .pgrid { display:grid; grid-template-columns:repeat(3, 1fr); gap:6pt; margin-top:6pt; }
+    .pgrid { display:grid; grid-template-columns:repeat(5, 1fr); gap:6pt; margin-top:6pt; }
     .pcell { break-inside:avoid; page-break-inside:avoid; border:0.5pt solid #000; margin:0; }
-    .pcell img { width:100%; display:block; }
+    .pcell img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; }
     .pcell figcaption { font-family:'Space Mono', monospace; font-size:7.5pt; letter-spacing:0.16em; padding:3pt 4pt; border-top:0.5pt solid #000; }
     a[href]::after { content:none !important; }
   }
@@ -344,7 +354,7 @@
       </div>
     </div>
     <div class="head-right">
-      <div class="status"><span class="dot"></span><span id="statusText">tap enable</span></div>
+      <div class="status"><span class="dot"></span><span id="statusText">tap enable</span><span class="held" id="heldBadge"></span></div>
       <button class="bf-mark" id="markBtn" aria-label="Settings" aria-expanded="false"><svg viewBox="0 0 120 120" aria-hidden="true"><g class="lines"><g class="lw lw1"><rect x="38" y="28" width="4" height="64" rx="2"/></g><g class="lw lw2"><rect x="57" y="28" width="6" height="64" rx="3"/></g><g class="lw lw3"><rect x="78" y="28" width="4" height="64" rx="2"/></g></g></svg></button>
     </div>
   </header>
@@ -424,13 +434,13 @@
       <div class="how-step"><span class="n">02</span><div><b>Point and shoot</b>
         <p>Every photo is saved with its GPS position and compass bearing burned into the image, plus a running number — field-001, field-002 — that never resets.</p></div></div>
       <div class="how-step"><span class="n">03</span><div><b>Save to your phone</b>
-        <p>iOS opens the share sheet after each shot. Tap Save Image to put it in your camera roll. If you cancel, the capture still stays on the map.</p></div></div>
+        <p>By default iOS opens its share sheet after each shot — tap Save Image to put the photo in your camera roll. Prefer fewer interruptions? Settings &rsaquo; Photos can hold them instead, then save the whole set at once with Save photos. Either way the capture stays on the map.</p></div></div>
       <div class="how-step"><span class="n">04</span><div><b>Check the map</b>
         <p>Every located capture appears as a numbered pin with a cone showing which way you faced. The number on the pin is the number on the photo. Tap a pin to review or delete it.</p></div></div>
       <div class="how-step"><span class="n">05</span><div><b>Sleep the camera</b>
         <p>Walking between shots? Tap Sleep to switch the camera off and save battery. Position and bearing keep tracking, so you're ready the moment you wake it.</p></div></div>
       <div class="how-step"><span class="n">06</span><div><b>Print or export</b>
-        <p>Settings &rsaquo; Print gives you the map, a table of coordinates and bearings, and a contact sheet of the photos — preview it before printing. Settings &rsaquo; Data exports a JSON backup or a CSV.</p></div></div>
+        <p>Settings &rsaquo; Print gives you the map and a contact sheet of the photos — preview it before printing. For coordinates and bearings as data, use the CSV export in Settings &rsaquo; Data.</p></div></div>
       <div class="how-note">Everything stays on your device. No account, no cloud. Back up from Settings &rsaquo; Data if a set matters — phones can clear browser storage if the app sits unused for a long time.</div>
       <button class="mini wide" id="howDone" style="margin-top:22px">Done</button>
     </div>
@@ -443,9 +453,25 @@
     </div>
     <div class="set-body">
       <div class="set-sec">
+        <div class="h">Help</div>
+        <button class="mini wide" id="howBtn">How Field Camera works</button>
+      </div>
+      <div class="set-sec">
         <div class="h">Project</div>
         <input class="set-input" id="projInput" type="text" placeholder="Untitled survey" maxlength="60" autocomplete="off" autocapitalize="words">
         <div class="set-hint">Named on the printed sheet and in exports. Change it any time — it applies to the whole set, not individual captures.</div>
+      </div>
+      <div class="set-sec">
+        <div class="h">Photos</div>
+        <div class="seg" id="modeSeg">
+          <button data-mode="shot">Save each shot</button>
+          <button data-mode="batch">Save together</button>
+        </div>
+        <div class="set-hint" id="modeHint"></div>
+        <button class="mini wide" id="saveAllBtn" style="margin-top:10px">Save photos</button>
+        <div class="set-hint" id="pendHint"></div>
+        <div class="storage-bar"><span id="storageFill"></span></div>
+        <div class="set-hint" id="storageHint">Checking storage…</div>
       </div>
       <div class="set-sec">
         <div class="h">Theme</div>
@@ -454,13 +480,12 @@
       <div class="set-sec">
         <div class="h">Print</div>
         <div class="toggle-row"><div class="tl">Map<small>Page 1 · capture map</small></div><button class="tgl on" id="tgMap" data-k="map"></button></div>
-        <div class="toggle-row"><div class="tl">Data table<small>Coordinates &amp; bearing</small></div><button class="tgl on" id="tgTable" data-k="table"></button></div>
         <div class="toggle-row"><div class="tl">Photos<small>Contact grid of captures</small></div><button class="tgl" id="tgPhotos" data-k="photos"></button></div>
         <div class="set-row2" style="margin-top:14px">
           <button class="mini" id="previewBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Preview</button>
           <button class="mini" id="printFromSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>Print</button>
         </div>
-        <div class="set-hint">Preview shows the actual sheet on screen before printing. Photos print from stored thumbnails (kept for every capture). The map and data print regardless.</div>
+        <div class="set-hint">Preview shows the actual sheet on screen before printing. Photos print from stored thumbnails, kept for every capture. Coordinates and bearings are burned into each photo and included in the CSV export.</div>
       </div>
       <div class="set-sec">
         <div class="h">Data</div>
@@ -484,10 +509,6 @@
         <div class="h">Danger</div>
         <div id="clearWrap"><button class="mini" id="clearBtn">Clear all captures</button></div>
         <div class="set-hint">Removes the map history and resets numbering. Photos already saved to your device are not affected.</div>
-      </div>
-      <div class="set-sec">
-        <div class="h">Help</div>
-        <button class="mini wide" id="howBtn">How Field Camera works</button>
       </div>
       <div class="set-sec">
         <div class="h">About</div>
@@ -519,20 +540,24 @@ const SCHEMA_V = 1;
 let shots = [], trash = [], nextSeq = 1;
 let loaded = false;
 // settings live in state.settings but are mirrored to these vars the app already uses
-let currentStyle = 'cyclosm', theme = '', printOpts = { map: true, table: true, photos: false };
+let currentStyle = 'cyclosm', theme = '', printOpts = { map: true, photos: true };
 let zoomOffset = 0;   // user zoom nudge on top of the auto-fit (-2..+2)
 let projectName = '';  // optional label for the survey, shown on print
+let saveMode = 'shot';  // 'shot' = share sheet per capture | 'batch' = hold, save together
 const ZOOM_MIN = -2, ZOOM_MAX = 2;
 
 // ── photo thumbnails live in IndexedDB (media, no 5MB cliff) — dataURLs, not Blobs (iOS) ──
-const IDB_NAME = 'fieldcam', IDB_STORE = 'thumbs';
+const IDB_NAME = 'fieldcam', IDB_STORE = 'thumbs', IDB_PENDING = 'pending';
 let _idb = null;
 function idb() {
   if (_idb) return _idb;
   _idb = new Promise((res, rej) => {
     let req;
-    try { req = indexedDB.open(IDB_NAME, 1); } catch (e) { return rej(e); }
-    req.onupgradeneeded = () => { const db = req.result; if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE); };
+    try { req = indexedDB.open(IDB_NAME, 2); } catch (e) { return rej(e); }
+    req.onupgradeneeded = () => { const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      if (!db.objectStoreNames.contains(IDB_PENDING)) db.createObjectStore(IDB_PENDING);
+    };
     req.onsuccess = () => res(req.result);
     req.onerror = () => rej(req.error);
   });
@@ -547,6 +572,76 @@ function idbTx(mode, fn) {
   }));
 }
 function putThumb(seq, dataURL) { return idbTx('readwrite', s => s.put(dataURL, seq)).catch(() => false); }
+// Full-res photos held for batch saving. Blobs are fine here (never re-read as
+// dataURL) and far smaller in memory than base64.
+function pendTx(mode, fn) {
+  return idb().then(db => new Promise((res, rej) => {
+    const tx = db.transaction(IDB_PENDING, mode);
+    let out; try { out = fn(tx.objectStore(IDB_PENDING)); } catch (e) { return rej(e); }
+    tx.oncomplete = () => res(out); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error);
+  }));
+}
+// ── storage headroom ──────────────────────────────────────────────────────
+// Held photos are the only thing here that grows without bound, so watch the
+// quota and warn while there's still room to act, not after a write fails.
+let storageWarned = 0;   // last threshold warned at, so we nag once per level
+async function storageStatus() {
+  try {
+    if (!navigator.storage || !navigator.storage.estimate) return null;
+    const { usage = 0, quota = 0 } = await navigator.storage.estimate();
+    if (!quota) return null;
+    return { usage, quota, pct: usage / quota, freeMB: (quota - usage) / 1048576 };
+  } catch (e) { return null; }
+}
+async function checkStorage() {
+  const st = await storageStatus();
+  if (!st) return null;
+  // Thresholds chosen so there's still room for several more captures at each step.
+  const level = st.pct >= 0.95 ? 95 : st.pct >= 0.85 ? 85 : st.pct >= 0.75 ? 75 : 0;
+  if (level && level > storageWarned) {
+    storageWarned = level;
+    if (level >= 95) {
+      showToast('Storage almost full — save your photos now, captures may stop saving', 5000);
+    } else if (level >= 85) {
+      showToast(`Storage ${Math.round(st.pct*100)}% full — save photos soon`, 4000);
+    } else {
+      showToast(`Storage ${Math.round(st.pct*100)}% full`, 3000);
+    }
+  }
+  if (level === 0) storageWarned = 0;   // dropped back down; allow warning again
+  return st;
+}
+function fmtMB(n) { return n >= 1024 ? (n/1024).toFixed(1) + ' GB' : Math.round(n) + ' MB'; }
+async function renderStorage() {
+  const fill = $('storageFill'), hint = $('storageHint');
+  if (!fill || !hint) return;
+  const st = await storageStatus();
+  if (!st) { fill.style.width = '0%'; hint.textContent = 'This browser doesn\'t report storage limits.'; return; }
+  const pct = Math.min(100, Math.round(st.pct * 100));
+  fill.style.width = pct + '%';
+  fill.classList.toggle('warn', st.pct >= 0.75);
+  // Translate free space into the number that actually matters: more photos.
+  const perPhotoMB = 2.5;   // rough iPhone JPEG at capture resolution
+  const room = Math.floor(st.freeMB / perPhotoMB);
+  hint.textContent = `${fmtMB(st.usage/1048576)} used of about ${fmtMB(st.quota/1048576)}. `
+    + (saveMode === 'batch'
+        ? `Roughly ${room} more photo${room===1?'':'s'} fit before saving.`
+        : 'Per-shot saving uses almost none of this.')
+    + (st.pct >= 0.75 ? ' Save your photos to free space.' : '');
+}
+function putPending(seq, blob, name) { return pendTx('readwrite', s => s.put({ blob, name }, seq)).catch(() => false); }
+function deletePending(seq)          { return pendTx('readwrite', s => s.delete(seq)).catch(() => {}); }
+function clearPending()              { return pendTx('readwrite', s => s.clear()).catch(() => {}); }
+function getAllPending() {
+  return idb().then(db => new Promise(res => {
+    const out = [];
+    let tx; try { tx = db.transaction(IDB_PENDING, 'readonly'); } catch (e) { return res([]); }
+    const cur = tx.objectStore(IDB_PENDING).openCursor();
+    cur.onsuccess = e => { const c = e.target.result;
+      if (c) { out.push({ seq: c.key, blob: c.value.blob, name: c.value.name }); c.continue(); } else res(out); };
+    cur.onerror = () => res(out);
+  })).catch(() => []);
+}
 function deleteThumb(seq)       { return idbTx('readwrite', s => s.delete(seq)).catch(() => {}); }
 function clearThumbs()          { return idbTx('readwrite', s => s.clear()).catch(() => {}); }
 function getAllThumbs() {        // → { seq: dataURL }
@@ -596,11 +691,11 @@ function normalize(raw) {
     theme: (set.theme === 'blueprint' || set.theme === 'bone') ? set.theme : '',
     printOpts: {
       map:    set.printOpts ? set.printOpts.map    !== false : true,
-      table:  set.printOpts ? set.printOpts.table  !== false : true,
-      photos: set.printOpts ? set.printOpts.photos === true  : false
+      photos: set.printOpts ? set.printOpts.photos !== false : true
     },
     zoomOffset: Math.max(-2, Math.min(2, Number.isFinite(set.zoomOffset) ? Math.round(set.zoomOffset) : 0)),
-    projectName: (typeof set.projectName === 'string' ? set.projectName : '').slice(0, 60)
+    projectName: (typeof set.projectName === 'string' ? set.projectName : '').slice(0, 60),
+    saveMode: set.saveMode === 'batch' ? 'batch' : 'shot'
   };
   return s;
 }
@@ -625,6 +720,7 @@ function load() {
   shots = state.shots; trash = state.trash; nextSeq = state.nextSeq;
   currentStyle = state.settings.mapStyle; theme = state.settings.theme; printOpts = state.settings.printOpts;
   zoomOffset = state.settings.zoomOffset; projectName = state.settings.projectName;
+  saveMode = state.settings.saveMode;
   save(state);            // write the migrated shape back
   // one-time: clear the old scattered keys now that they're folded in
   try { ['fieldcam.shots','fieldcam.nextSeq','fieldcam.mapStyle','fieldcam.theme','fieldcam.printOpts','fieldcam.thumbs']
@@ -641,7 +737,7 @@ function load() {
   return state;
 }
 function currentState() {
-  return { v: SCHEMA_V, shots, trash, nextSeq, settings: { mapStyle: currentStyle, theme, printOpts, zoomOffset, projectName } };
+  return { v: SCHEMA_V, shots, trash, nextSeq, settings: { mapStyle: currentStyle, theme, printOpts, zoomOffset, projectName, saveMode } };
 }
 function save(state) {
   try { localStorage.setItem(STATE_KEY, JSON.stringify(state || currentState())); return true; }
@@ -1018,10 +1114,31 @@ async function capturePhoto(shot) {
     tc.width = Math.round(W * scale); tc.height = Math.round(H * scale);
     tc.getContext('2d').drawImage(cv, 0, 0, tc.width, tc.height);
     const thumb = tc.toDataURL('image/jpeg', 0.5);
-    putThumb(shot.seq, thumb);   // async, unlimited (no 5MB cliff); a failure never breaks the capture
+    putThumb(shot.seq, thumb).then(ok => {
+      // A lost thumbnail only costs the print contact sheet — but say so, don't
+      // let print quietly come up short later.
+      if (ok === false && !putThumb._warned) {
+        putThumb._warned = true;
+        showToast('Storage full — this photo won\'t appear on the printed sheet', 4000);
+      }
+    });
   } catch (e) { /* thumbnail is best-effort */ }
 
   const fname = `${shotFile(shot)}.jpg`;
+
+  // Batch mode: hold the full-res photo and save the set in one go later.
+  if (saveMode === 'batch') {
+    const ok = await putPending(shot.seq, blob, fname);
+    if (ok !== false) {
+      refreshPendingCount(); updateHeldBadge();
+      checkStorage();                       // warn while there's still room to act
+      return;
+    }
+    // Storing failed — almost certainly quota. Don't lose the photo: fall through
+    // to the share sheet and say plainly why it appeared.
+    showToast('Storage full — saving this photo now instead', 4000);
+  }
+
   const file = window.File ? new File([blob], fname, { type: 'image/jpeg' }) : null;
   if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
     // files-only (no title/text) — keeps iOS's sheet image-focused so "Save Image" stays near the top
@@ -1080,9 +1197,9 @@ $('zoomOut').addEventListener('click', () => nudgeZoom(-1));
 // SETTINGS overlay — Theme / Data / Danger
 // ============================================================
 const THEMES = [
-  { key: '',          name: 'Mono',      sub: 'Neutral ink',  bg: '#0c0c0d', ac: '#ffffff' },
-  { key: 'blueprint', name: 'Blueprint', sub: 'Deep navy',    bg: '#0a1830', ac: '#5bc6ff' },
-  { key: 'bone',      name: 'Bone',      sub: 'Paper light',  bg: '#e9e5da', ac: '#9a5b34' }
+  { key: '',          name: 'Mono',      sub: 'Neutral ink',  bg: '#0d0d0c', ac: '#f7f7f7' },
+  { key: 'blueprint', name: 'Blueprint', sub: 'Near black',   bg: '#14171b', ac: '#8a93a0' },
+  { key: 'bone',      name: 'Slate',     sub: 'Light grey',   bg: '#e6e8ea', ac: '#35648d' }
 ];
 // theme var is owned by the state layer (loaded via normalize)
 function applyTheme(k) {
@@ -1101,7 +1218,7 @@ function renderSwatches() {
     applyTheme(b.dataset.k); renderSwatches();
   }));
 }
-function openSettings() { renderSwatches(); renderTrash(); $('settings').classList.add('active');
+function openSettings() { renderSwatches(); renderTrash(); syncModeUI(); renderStorage(); $('settings').classList.add('active');
   $('projInput').value = projectName;
   document.body.classList.add('settings-open');
   $('markBtn').classList.add('expanded'); $('markBtn').setAttribute('aria-expanded', 'true'); }
@@ -1154,6 +1271,61 @@ function armEmptyTrash() {
   });
 }
 
+// ── photo saving: per-shot share sheet, or hold and save together ──
+function syncModeUI() {
+  document.querySelectorAll('#modeSeg button').forEach(b =>
+    b.classList.toggle('on', b.dataset.mode === saveMode));
+  $('modeHint').textContent = saveMode === 'batch'
+    ? 'Photos are held in the app until you tap Save photos. Fewer interruptions while shooting — but browser storage on iPhone is limited, often only tens of photos. Watch the bar below and save often.'
+    : 'iOS opens the share sheet after each capture. Tap Save Image to put the photo in your camera roll straight away.';
+  refreshPendingCount();
+}
+document.querySelectorAll('#modeSeg button').forEach(b => b.addEventListener('click', () => {
+  saveMode = b.dataset.mode; save(); syncModeUI();
+}));
+
+let pendingCount = 0;
+function updateHeldBadge() {
+  const el = $('heldBadge'); if (!el) return;
+  el.textContent = pendingCount ? `${pendingCount} held` : '';
+  el.classList.toggle('show', pendingCount > 0);
+}
+async function refreshPendingCount() {
+  const list = await getAllPending();
+  pendingCount = list.length;
+  const btn = $('saveAllBtn'), hint = $('pendHint');
+  if (!btn) return;
+  btn.textContent = pendingCount ? `Save photos (${pendingCount})` : 'Save photos';
+  btn.disabled = pendingCount === 0;
+  updateHeldBadge();
+  hint.textContent = pendingCount
+    ? `${pendingCount} photo${pendingCount===1?'':'s'} waiting — not yet in your camera roll. Save them before storage fills or you leave the app for long.`
+    : 'Nothing waiting. Per-shot saving stores only tiny thumbnails, so it never fills storage.';
+}
+
+// Share every held photo in one sheet.
+$('saveAllBtn').addEventListener('click', async () => {
+  const btn = $('saveAllBtn'); const old = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Preparing…';
+  try {
+    const list = await getAllPending();
+    if (!list.length) { showToast('No photos waiting', 2200); return; }
+    const files = list.map(p => new File([p.blob], p.name, { type: 'image/jpeg' }));
+    if (navigator.canShare && navigator.canShare({ files })) {
+      try {
+        await navigator.share({ files });
+        await clearPending();                    // saved — release the held copies
+        showToast(`Saved <b>${files.length}</b> photo${files.length===1?'':'s'}`);
+      } catch (e) {
+        if (e && e.name === 'AbortError') { showToast('Not saved — photos are still waiting', 2800); }
+        else { showToast('Save failed — photos are still waiting', 3000); }
+      }
+    } else {
+      showToast('Sharing several files at once isn\'t supported here', 3000);
+    }
+  } finally { btn.textContent = old; refreshPendingCount(); renderStorage(); }
+});
+
 // header mark button toggles settings open/closed (splays in place, stays visible top-right)
 
 // CSV export (Data section — the backup story)
@@ -1198,6 +1370,7 @@ $('jsonFile').addEventListener('change', e => {
       shots = state.shots; trash = state.trash; nextSeq = state.nextSeq;
       currentStyle = state.settings.mapStyle; theme = state.settings.theme; printOpts = state.settings.printOpts;
       zoomOffset = state.settings.zoomOffset; projectName = state.settings.projectName;
+      saveMode = state.settings.saveMode;
       save(state);
       applyTheme(theme); syncStyleButtons(); syncToggles(); refreshMapBtn();
       if ($('mapView').classList.contains('active')) drawMap();
@@ -1414,17 +1587,27 @@ document.querySelectorAll('.style-seg').forEach(btn => btn.addEventListener('cli
 // printOpts var is owned by the state layer (loaded via normalize)
 function syncToggles() {
   $('tgMap').classList.toggle('on', printOpts.map);
-  $('tgTable').classList.toggle('on', printOpts.table);
   $('tgPhotos').classList.toggle('on', printOpts.photos);
 }
-['tgMap','tgTable','tgPhotos'].forEach(id => $(id).addEventListener('click', () => {
+['tgMap','tgPhotos'].forEach(id => $(id).addEventListener('click', () => {
   const k = $(id).dataset.k; printOpts[k] = !printOpts[k];
   save();
   syncToggles();
 }));
 
 // Build the print sheet pages once — shared by preview AND print (no drift).
-async function buildSheetPages() {
+async function buildSheetPages(onStep) {
+  // Report real stages rather than an indeterminate spinner — the map is the slow
+  // part (tile fetches + JPEG encode) and thumbnails come from IndexedDB.
+  const steps = (printOpts.map ? 1 : 0) + (printOpts.photos ? 1 : 0);
+  let done = 0;
+  // Yield a frame after each step, otherwise the long map render blocks the paint
+  // and the progress bar jumps straight from 0 to done.
+  const step = async label => {
+    done++;
+    if (onStep) onStep(done / Math.max(steps,1), label);
+    await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+  };
   const located = shots.filter(s => s.position);
   const dstr = new Date().toLocaleString();
   const pages = [];
@@ -1436,7 +1619,7 @@ async function buildSheetPages() {
   if (printOpts.map) {
     let mapImg = '';
     if (located.length) {
-      const MW = 1400, MH = 1000;
+      const MW = 2000, MH = 1200;   // landscape, fills the 11x17 sheet width
       const off = document.createElement('canvas'); off.width = MW; off.height = MH;
       await renderMapInto(off.getContext('2d'), MW, MH, false);
       mapImg = off.toDataURL('image/jpeg', 0.92);
@@ -1445,17 +1628,7 @@ async function buildSheetPages() {
       ? `<img class="printMap" src="${mapImg}" alt="capture map"><div class="print-attr">${STYLES[currentStyle].attrFull}</div>`
       : `<div class="print-meta">No located captures to map.</div>`));
     head = '';
-  }
-  if (printOpts.table) {
-    const rows = shots.map(s => {
-      const hdg = s.heading != null ? `${Math.round(s.heading)}° ${card(s.heading)}` : '—';
-      const pos = s.position ? `${s.position.lat.toFixed(6)}, ${s.position.lng.toFixed(6)}` : 'no fix';
-      return `<tr><td>${String(s.seq).padStart(3,'0')}</td><td>${shotFile(s)}.jpg</td><td>${pos}</td><td>${hdg}</td><td>${new Date(s.timestamp).toLocaleString()}</td></tr>`;
-    }).join('');
-    pages.push((head || '') + `<div class="print-wordmark" style="font-size:14pt">Captures</div><hr class="print-rule">
-      <table><thead><tr><th>No.</th><th>File</th><th>Coordinates</th><th>Bearing</th><th>Time</th></tr></thead>
-      <tbody>${rows || '<tr><td colspan="5">No captures.</td></tr>'}</tbody></table>`);
-    head = '';
+    await step('Map');
   }
   if (printOpts.photos) {
     const tmap = await getAllThumbs();
@@ -1468,38 +1641,50 @@ async function buildSheetPages() {
     pages.push((head || '') + `<div class="print-wordmark" style="font-size:14pt">Photos</div><hr class="print-rule">
       ${withThumb.length ? `<div class="pgrid">${cells}</div>` : '<div class="print-meta">No stored photo thumbnails.</div>'}
       ${missing > 0 ? `<div class="print-attr">${missing} capture${missing===1?'':'s'} without a stored thumbnail (photo is on your device).</div>` : ''}`);
+    await step('Photos');
   }
   return pages;
 }
 
 async function buildAndPrint() {
   const btn = $('printFromSettings');
-  const old = btn.innerHTML; btn.disabled = true;
+  const old = btn.innerHTML; btn.disabled = true; btn.classList.add('busy');
+  const setBusy = (pct, label) => {
+    btn.innerHTML = `<span class="barlabel">${label}</span><span class="bar" style="width:${Math.round(pct*100)}%"></span>`;
+  };
+  setBusy(0, 'Building…');
   try {
-    const pages = await buildSheetPages();
-    if (!pages.length) { showToast('Nothing selected — enable Map, Table, or Photos', 2600); return; }
+    const pages = await buildSheetPages((pct, label) => setBusy(pct, label + '…'));
+    if (!pages.length) { showToast('Nothing selected — enable Map or Photos', 2600); return; }
+    setBusy(1, 'Preparing…');
     $('printSheet').innerHTML = pages.join('<div class="print-break"></div>');
     await new Promise(r => setTimeout(r, 400)); // let images decode
     window.print();
   } catch (e) {
     showToast('Print prep failed — ' + e.message, 3000);
   } finally {
-    btn.innerHTML = old; btn.disabled = false;
+    btn.classList.remove('busy'); btn.innerHTML = old; btn.disabled = false;
   }
 }
 $('printFromSettings').addEventListener('click', () => buildAndPrint());
 
 // ── Preview overlay — renders the SAME sheet pages onto on-screen "paper" ──
 async function openPreview() {
-  const btn = $('previewBtn'); const old = btn.innerHTML; btn.disabled = true; btn.textContent = '…';
+  const btn = $('previewBtn'); const old = btn.innerHTML;
+  btn.disabled = true; btn.classList.add('busy');
+  const setBusy = (pct, label) => {
+    btn.innerHTML = `<span class="barlabel">${label}</span><span class="bar" style="width:${Math.round(pct*100)}%"></span>`;
+  };
+  setBusy(0, 'Building…');
   try {
-    const pages = await buildSheetPages();
-    if (!pages.length) { showToast('Nothing selected — enable Map, Table, or Photos', 2600); return; }
+    const pages = await buildSheetPages((pct, label) => setBusy(pct, label + '…'));
+    if (!pages.length) { showToast('Nothing selected — enable Map or Photos', 2600); return; }
+    setBusy(1, 'Rendering…');
     $('previewPages').innerHTML = pages.map((p, i) =>
       `<div class="paper"><div class="paper-n">Page ${i+1}</div><div class="print-sheet">${p}</div></div>`).join('');
     $('preview').classList.add('active');
   } catch (e) { showToast('Preview failed — ' + e.message, 3000); }
-  finally { btn.innerHTML = old; btn.disabled = false; }
+  finally { btn.classList.remove('busy'); btn.innerHTML = old; btn.disabled = false; }
 }
 $('previewBtn').addEventListener('click', openPreview);
 $('previewClose').addEventListener('click', () => $('preview').classList.remove('active'));
@@ -1511,6 +1696,12 @@ window.addEventListener('orientationchange', () => { if ($('mapView').classList.
 
 syncToggles();
 refreshMapBtn();
+refreshPendingCount();
+// Ask the browser not to evict this app's data under storage pressure. Safari
+// grants this to installed PWAs; it's a request, not a guarantee.
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persisted().then(already => { if (!already) navigator.storage.persist().catch(()=>{}); }).catch(()=>{});
+}
 
 // Register the service worker for offline use (fail-silent; no effect on file:// or unsupported browsers)
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
