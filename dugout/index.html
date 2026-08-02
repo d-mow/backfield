@@ -441,9 +441,9 @@ const THEMES = {
     "--c-400": "#3d5639",
     "--c-500": "#5e7256",
     "--c-600": "#8fa088",
-    "--c-700": "#c8d0c0",
-    "--c-800": "#ebe4d1",
-    "--c-900": "#f5f0e1",
+    "--c-700": "#d4dccb",
+    "--c-800": "#f2ede0",
+    "--c-900": "#fbf8f0",
     "--c-grass": "#a8b59f",
   },
   wrigley: {
@@ -456,9 +456,9 @@ const THEMES = {
     "--c-400": "#9c4d3f",
     "--c-500": "#b96d5d",
     "--c-600": "#d19488",
-    "--c-700": "#e1bcb4",
-    "--c-800": "#f0e1da",
-    "--c-900": "#f9f0e8",
+    "--c-700": "#ebccc4",
+    "--c-800": "#f7ede8",
+    "--c-900": "#fdf7f3",
     "--c-grass": "#4a6b35",
   },
   yankee: {
@@ -501,27 +501,26 @@ const THEMES = {
     "--c-400": "#8b4814",
     "--c-500": "#b86620",
     "--c-600": "#df8b48",
-    "--c-700": "#f5b988",
-    "--c-800": "#fde0c2",
-    "--c-900": "#fff5eb",
+    "--c-700": "#fbc9a0",
+    "--c-800": "#feecd8",
+    "--c-900": "#fffaf4",
     "--c-grass": "#9eb38a",
   },
   mono: {
-    name: "Monochrome",
-    sub: "Cool dark",
-    // Inverted ramp: --c-50 is the near-black ground, --c-900 the soft off-white
-    // ink. Cool/neutral throughout, passing through the steel accent mid-ramp.
-    "--c-50":  "#14171b",  // bg — near-black, faintly cool
-    "--c-100": "#1a1e23",
-    "--c-200": "#242a30",
-    "--c-300": "#333a42",  // hairlines
-    "--c-400": "#4d555f",
-    "--c-500": "#6b7480",  // muted labels
-    "--c-600": "#8a93a0",  // accent — desaturated steel
-    "--c-700": "#a2aab4",
-    "--c-800": "#b4bbc3",
-    "--c-900": "#c5c8cd",  // ink — soft neutral off-white
-    "--c-grass": "#333a42",
+    name: "Midnight",
+    sub: "Deep navy",
+    // Darkened inverse-Bronx: a deeper midnight ground up to a cool blue-white ink.
+    "--c-50":  "#060d1a",  // bg — deep midnight navy
+    "--c-100": "#0a1428",
+    "--c-200": "#101d38",
+    "--c-300": "#1b2c50",  // hairlines
+    "--c-400": "#3a4f7d",
+    "--c-500": "#5a6f9c",  // muted labels
+    "--c-600": "#7888b0",
+    "--c-700": "#a0accd",
+    "--c-800": "#c2cae0",
+    "--c-900": "#e6ebf5",  // ink — cool blue-white
+    "--c-grass": "#1b2c50",
   },
 };
 
@@ -679,12 +678,17 @@ function App() {
       setTeamName(await loadData("teamName", ""));
       setGameLength(await loadData("gameLength", 3));
 
-      // Theme: default is Monochrome. A saved choice is always respected — only
+      // Theme: default is Midnight. A saved choice is always respected — only
       // a genuinely fresh install (no saved theme) lands on mono.
       const savedTheme = await loadData("theme", null);
       setTheme(savedTheme || "mono");
       setSavedGames(await loadData("savedGames", []));
       setSeasonStats(await loadData("seasonStats", {}));
+
+      // First launch: show "How Dugout Works" as the opening screen. Once the
+      // user dismisses it (which sets infoSeen), it never auto-opens again.
+      const infoSeen = await loadData("infoSeen", false);
+      if (!infoSeen) setShowInfo(true);
       setLoaded(true);
     })();
   }, []);
@@ -1419,14 +1423,14 @@ function App() {
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Bebas+Neue&display=swap');
         * { -webkit-tap-highlight-color: transparent; }
 
-        /* Dark Monochrome: the chip pairing (bg-c-900 + text-c-50) gets the LIGHT
+        /* Dark Midnight: the chip pairing (bg-c-900 + text-c-50) gets the LIGHT
            treatment — a soft off-white bar with dark text — so the masthead, active
            tab, and buttons read as bright chips on the dark ground. Scoped to
            [data-theme="mono"] so light themes are untouched. (Print forces mono
            separately, with matching specificity so this never reaches paper.) */
-        [data-theme="mono"] .bg-c-900 { background-color: #c5c8cd !important; }
-        [data-theme="mono"] .text-c-50 { color: #14171b !important; }
-        [data-theme="mono"] .active\\:bg-c-700:active { background-color: #a2aab4 !important; }
+        [data-theme="mono"] .bg-c-900 { background-color: #f4f5f7 !important; }
+        [data-theme="mono"] .text-c-50 { color: #060d1a !important; }
+        [data-theme="mono"] .active\\:bg-c-700:active { background-color: #d8dbe0 !important; }
         .display { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.02em; }
         button:active { transform: scale(0.97); }
         button { transition: transform 0.05s; }
@@ -1791,8 +1795,13 @@ function App() {
   }, /*#__PURE__*/React.createElement("style", null, `@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }`), /*#__PURE__*/React.createElement("div", {
     className: "shrink-0 bg-c-900 text-c-50 px-6 py-4 flex items-center justify-between"
   }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2.5"
+  }, /*#__PURE__*/React.createElement(DiamondMark, {
+    size: 22,
+    strokeWidth: 1.8
+  }), /*#__PURE__*/React.createElement("div", {
     className: "display text-2xl tracking-wide"
-  }, "How Dugout Works"), /*#__PURE__*/React.createElement("button", {
+  }, "How Dugout Works")), /*#__PURE__*/React.createElement("button", {
     onClick: async () => {
       await saveData("infoSeen", true);
       setShowInfo(false);
@@ -1881,8 +1890,9 @@ function App() {
     onClick: () => setTab("settings"),
     className: `w-8 h-8 flex items-center justify-center rounded ${tab === "settings" ? "bg-c-50 text-c-900" : "text-c-400"}`,
     "aria-label": "Settings"
-  }, /*#__PURE__*/React.createElement(SettingsIcon, {
-    className: "w-4 h-4"
+  }, /*#__PURE__*/React.createElement(BackfieldMark, {
+    size: 20,
+    expanded: tab === "settings"
   })))), /*#__PURE__*/React.createElement("div", {
     className: "flex border-t border-c-700"
   }, [{
@@ -2875,6 +2885,72 @@ function DiamondMark({
     fill: "currentColor",
     stroke: "none"
   }));
+}
+
+// Backfield studio mark — three field-lines. Studio convention: the top-right
+// toggle. Rests as a single horizontal line; blooms into three field-lines when
+// expanded (here: when the settings panel is open). Copied verbatim from the
+// studio component — do not redraw. Honors prefers-reduced-motion.
+function BackfieldMark({
+  size = 22,
+  expanded = false
+}) {
+  return /*#__PURE__*/React.createElement("span", {
+    className: `bf-mark${expanded ? " expanded" : ""}`,
+    style: {
+      display: "inline-block",
+      width: size,
+      height: size,
+      color: "currentColor"
+    },
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement("style", null, `
+        .bf-mark svg { width: 100%; height: 100%; display: block; }
+        .bf-mark rect { fill: currentColor; }
+        .bf-mark .lines { transform-box: fill-box; transform-origin: center;
+                          transition: transform .44s cubic-bezier(.5,0,.2,1); }
+        .bf-mark .lw    { transition: transform .44s cubic-bezier(.5,0,.2,1); }
+        /* rest = collapsed horizontal line */
+        .bf-mark .lines { transform: rotate(90deg); }
+        .bf-mark .lw1 { transform: translateX(20px); }
+        .bf-mark .lw3 { transform: translateX(-20px); }
+        /* expanded = three field-lines */
+        .bf-mark.expanded .lines { transform: rotate(0deg); }
+        .bf-mark.expanded .lw1,
+        .bf-mark.expanded .lw3 { transform: translateX(0); transition-delay: .08s; }
+        @media (prefers-reduced-motion: reduce) {
+          .bf-mark .lines, .bf-mark .lw { transition: none; }
+        }
+      `), /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 120 120",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement("g", {
+    className: "lines"
+  }, /*#__PURE__*/React.createElement("g", {
+    className: "lw lw1"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "38",
+    y: "28",
+    width: "4",
+    height: "64",
+    rx: "2"
+  })), /*#__PURE__*/React.createElement("g", {
+    className: "lw lw2"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "57",
+    y: "28",
+    width: "6",
+    height: "64",
+    rx: "3"
+  })), /*#__PURE__*/React.createElement("g", {
+    className: "lw lw3"
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: "78",
+    y: "28",
+    width: "4",
+    height: "64",
+    rx: "2"
+  })))));
 }
 function CountBox({
   label,
