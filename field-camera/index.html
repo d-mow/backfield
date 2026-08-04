@@ -123,6 +123,8 @@
   .seg button { flex: 1; background: none; border: 1px solid var(--line); border-radius: 2px;
     color: var(--ink-mid); font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
     text-transform: uppercase; padding: 11px 6px; transition: border-color .12s, color .12s; }
+  /* four-up interval picker needs tighter tracking to fit at 393px */
+  #everySeg button { font-size: 9px; letter-spacing: 0.08em; padding: 10px 2px; }
   .seg button.on { border-color: var(--ink); color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
   /* busy state with real progress — the sheet build is staged, so show the stage */
   .mini.busy { position: relative; overflow: hidden; color: var(--ink-mid); }
@@ -434,7 +436,7 @@
       <div class="how-step"><span class="n">02</span><div><b>Point and shoot</b>
         <p>Every photo is saved with its GPS position and compass bearing burned into the image, plus a running number — field-001, field-002 — that never resets.</p></div></div>
       <div class="how-step"><span class="n">03</span><div><b>Save to your phone</b>
-        <p>By default iOS opens its share sheet after each shot — tap Save Image to put the photo in your camera roll. Prefer fewer interruptions? Settings &rsaquo; Photos can hold them instead, then save the whole set at once with Save photos. Either way the capture stays on the map.</p></div></div>
+        <p>Photos are held as you shoot and saved as a set, so nothing interrupts you. Every 10 shots you'll be offered a save — tap it, then tap Save Image in the iOS sheet to put that batch in your camera roll. You can also tap Save photos in Settings &rsaquo; Photos at any time, change the interval, or switch to saving each shot as you take it. Held photos aren't in your camera roll until saved.</p></div></div>
       <div class="how-step"><span class="n">04</span><div><b>Check the map</b>
         <p>Every located capture appears as a numbered pin with a cone showing which way you faced. The number on the pin is the number on the photo. Tap a pin to review or delete it.</p></div></div>
       <div class="how-step"><span class="n">05</span><div><b>Sleep the camera</b>
@@ -468,6 +470,13 @@
           <button data-mode="batch">Save together</button>
         </div>
         <div class="set-hint" id="modeHint"></div>
+        <div class="seg" id="everySeg" style="margin-top:10px">
+          <button data-every="5">Every 5</button>
+          <button data-every="10">Every 10</button>
+          <button data-every="20">Every 20</button>
+          <button data-every="0">Manual</button>
+        </div>
+        <div class="set-hint" id="everyHint"></div>
         <button class="mini wide" id="saveAllBtn" style="margin-top:10px">Save photos</button>
         <div class="set-hint" id="pendHint"></div>
         <div class="storage-bar"><span id="storageFill"></span></div>
@@ -543,7 +552,10 @@ let loaded = false;
 let currentStyle = 'cyclosm', theme = '', printOpts = { map: true, photos: true };
 let zoomOffset = 0;   // user zoom nudge on top of the auto-fit (-2..+2)
 let projectName = '';  // optional label for the survey, shown on print
-let saveMode = 'shot';  // 'shot' = share sheet per capture | 'batch' = hold, save together
+let saveMode = 'batch';  // 'shot' = share sheet per capture | 'batch' = hold, save together
+// Batch is the default, but photos are never left to pile up indefinitely:
+// after this many are held, the app prompts to save. 0 = only save manually.
+let saveEvery = 10;
 const ZOOM_MIN = -2, ZOOM_MAX = 2;
 
 // ── photo thumbnails live in IndexedDB (media, no 5MB cliff) — dataURLs, not Blobs (iOS) ──
@@ -695,7 +707,8 @@ function normalize(raw) {
     },
     zoomOffset: Math.max(-2, Math.min(2, Number.isFinite(set.zoomOffset) ? Math.round(set.zoomOffset) : 0)),
     projectName: (typeof set.projectName === 'string' ? set.projectName : '').slice(0, 60),
-    saveMode: set.saveMode === 'batch' ? 'batch' : 'shot'
+    saveMode: set.saveMode === 'shot' ? 'shot' : 'batch',
+    saveEvery: [0, 5, 10, 20].includes(set.saveEvery) ? set.saveEvery : 10
   };
   return s;
 }
@@ -720,7 +733,7 @@ function load() {
   shots = state.shots; trash = state.trash; nextSeq = state.nextSeq;
   currentStyle = state.settings.mapStyle; theme = state.settings.theme; printOpts = state.settings.printOpts;
   zoomOffset = state.settings.zoomOffset; projectName = state.settings.projectName;
-  saveMode = state.settings.saveMode;
+  saveMode = state.settings.saveMode; saveEvery = state.settings.saveEvery;
   save(state);            // write the migrated shape back
   // one-time: clear the old scattered keys now that they're folded in
   try { ['fieldcam.shots','fieldcam.nextSeq','fieldcam.mapStyle','fieldcam.theme','fieldcam.printOpts','fieldcam.thumbs']
@@ -737,7 +750,7 @@ function load() {
   return state;
 }
 function currentState() {
-  return { v: SCHEMA_V, shots, trash, nextSeq, settings: { mapStyle: currentStyle, theme, printOpts, zoomOffset, projectName, saveMode } };
+  return { v: SCHEMA_V, shots, trash, nextSeq, settings: { mapStyle: currentStyle, theme, printOpts, zoomOffset, projectName, saveMode, saveEvery } };
 }
 function save(state) {
   try { localStorage.setItem(STATE_KEY, JSON.stringify(state || currentState())); return true; }
@@ -1039,6 +1052,52 @@ function showToast(html, ms = 1800) {
   window._tt = setTimeout(() => t.classList.remove('show'), ms);
 }
 
+// Compass dial burned into the photo. Same artwork as the on-screen compass
+// (ring, 5-degree ticks, cardinals) but with NORTH FIXED UP and a plain line
+// to the heading — a still photo has nothing to turn. Scaled from the
+// compass's own 100-unit box to radius r.
+function burnDial(ctx, cx, cy, r, heading) {
+  const U = r / 47;
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  ctx.beginPath(); ctx.arc(0, 0, 47 * U, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(12,12,13,0.72)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(120,118,110,0.55)'; ctx.lineWidth = Math.max(0.6, 0.6 * U); ctx.stroke();
+
+  for (let d = 0; d < 360; d += 5) {
+    const major = d % 90 === 0, mid = d % 45 === 0;
+    const a = (d - 90) * Math.PI / 180;
+    const r1 = 47 * U, r2 = (major ? 39 : mid ? 42 : 44) * U;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1);
+    ctx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
+    ctx.strokeStyle = major ? '#ffffff' : 'rgba(166,163,155,0.55)';
+    ctx.lineWidth = Math.max(0.5, (major ? 1.2 : 0.6) * U);
+    ctx.stroke();
+  }
+
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `700 ${Math.max(5, 11 * U)}px "Space Mono", monospace`;
+  [['N', 0], ['E', 90], ['S', 180], ['W', 270]].forEach(([ch, d]) => {
+    const a = (d - 90) * Math.PI / 180, rr = 31 * U;
+    ctx.fillStyle = d === 0 ? '#ffffff' : 'rgba(236,233,225,0.75)';
+    ctx.fillText(ch, Math.cos(a) * rr, Math.sin(a) * rr);
+  });
+
+  // heading line from the hub — no arrowhead
+  ctx.save();
+  ctx.rotate(heading * Math.PI / 180);      // 0 deg = up = north
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -40 * U);
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(1, 3 * U); ctx.lineCap = 'round';
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.beginPath(); ctx.arc(0, 0, 3.2 * U, 0, Math.PI * 2);
+  ctx.fillStyle = '#ece9e1'; ctx.fill();
+  ctx.restore();
+}
+
 async function capturePhoto(shot) {
   const v = video;
   if (!v.videoWidth) return; // no camera frame (e.g. permission denied)
@@ -1048,61 +1107,63 @@ async function capturePhoto(shot) {
   const ctx = cv.getContext('2d');
   ctx.drawImage(v, 0, 0, W, H);
 
-  // metadata strip across the bottom
+  // ── metadata strip across the bottom ─────────────────────────────────────
+  // Solid bar (no gradient): shot number left, compass dial hard right with the
+  // bearing to its left. North is fixed up and a plain line points at the
+  // heading — a still photo has nothing to turn, so a fixed dial reads clearer
+  // than the rotating bezel used on screen.
   const pad = Math.round(W * 0.035);
   const stripH = Math.round(H * 0.13);
   const y0 = H - stripH;
-  const grad = ctx.createLinearGradient(0, y0 - stripH * 0.4, 0, H);
-  grad.addColorStop(0, 'rgba(12,12,13,0)');
-  grad.addColorStop(0.4, 'rgba(12,12,13,0.78)');
-  grad.addColorStop(1, 'rgba(12,12,13,0.92)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, y0 - stripH * 0.4, W, stripH * 1.4);
-  // accent hairline
-  ctx.fillStyle = '#ffffff'; ctx.fillRect(pad, y0 + Math.round(stripH * 0.12), Math.round(W * 0.06), 3);
 
-  const big = Math.round(stripH * 0.66);
-  const lblSize = Math.round(stripH * 0.15);
-  const valSize = Math.round(stripH * 0.2);
+  ctx.fillStyle = 'rgba(12,12,13,0.94)';
+  ctx.fillRect(0, y0, W, stripH);
+  ctx.fillStyle = 'rgba(236,233,225,0.22)';
+  ctx.fillRect(0, y0, W, Math.max(1, Math.round(stripH * 0.012)));
 
-  // big sequence number (matches map pin)
-  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
-  ctx.fillStyle = '#ece9e1';
-  ctx.font = `600 ${big}px "Space Mono", monospace`;
+  const textSize = Math.round(stripH * 0.40);
+  // textBaseline 'middle' centres the em box, which reserves descender space
+  // that digits and caps never use — nudge down so the ink is optically centred.
+  const midY = y0 + stripH / 2 + Math.round(textSize * 0.11);
+
+  // left: shot number, timestamp beneath
   const seqStr = String(shot.seq).padStart(3, '0');
-  ctx.fillText(seqStr, pad, y0 + Math.round(stripH * 0.82));
-  const seqW = ctx.measureText(seqStr).width;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ece9e1';
+  ctx.font = `600 ${textSize}px "Space Mono", monospace`;
+  ctx.fillText(seqStr, pad, midY);
 
-  const colX = pad + seqW + Math.round(W * 0.05);
-  const hdg = shot.heading != null ? `${Math.round(shot.heading)}° ${card(shot.heading)}` : '—';
-  const coords = shot.position
-    ? `${shot.position.lat.toFixed(5)}°, ${shot.position.lng.toFixed(5)}°`
-    : 'NO GPS FIX';
-  const ts = new Date(shot.timestamp).toLocaleString();
+  const tsSize = Math.round(stripH * 0.16);
+  ctx.fillStyle = 'rgba(236,233,225,0.55)';
+  ctx.font = `600 ${tsSize}px "Space Mono", monospace`;
+  ctx.fillText(new Date(shot.timestamp).toLocaleString(), pad, y0 + stripH - Math.round(stripH * 0.16));
 
-  // two stacked fields: Position (top), Bearing (bottom)
-  const lblColor = 'rgba(236,233,225,0.55)';
-  const rowGap = Math.round(stripH * 0.42);
-  const topBase = y0 + Math.round(stripH * 0.5);
-  const botBase = topBase + rowGap;
-  const field = (x, base, label, value) => {
-    ctx.textAlign = 'left';
-    ctx.fillStyle = lblColor;
-    ctx.font = `600 ${lblSize}px "Space Mono", monospace`;
-    ctx.fillText(label, x, base - valSize - Math.round(stripH * 0.02));
-    ctx.fillStyle = '#ece9e1';
-    ctx.font = `500 ${valSize}px "Space Mono", monospace`;
-    ctx.fillText(value, x, base);
-  };
-  field(colX, topBase, 'POSITION', coords);
-  field(colX, botBase, 'BEARING', hdg);
+  // right: dial hard against the padding, bearing text to its left
+  let rightX = W - pad;
+  if (shot.heading != null) {
+    const r = Math.round(stripH * 0.78 / 2);
+    burnDial(ctx, rightX - r, y0 + stripH / 2, r, shot.heading);
+    rightX -= r * 2 + Math.round(W * 0.020);
+  }
+  const hdgStr = shot.heading != null ? `${Math.round(shot.heading)}\u00B0 ${card(shot.heading)}` : 'NO BEARING';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ece9e1';
+  ctx.font = `600 ${textSize}px "Space Mono", monospace`;
+  ctx.fillText(hdgStr, rightX, midY);
 
-  // right-aligned timestamp, bottom
-  ctx.textAlign = 'right';
-  ctx.fillStyle = lblColor;
-  ctx.font = `600 ${lblSize}px "Space Mono", monospace`;
-  ctx.fillText(ts, W - pad, botBase);
-  ctx.textAlign = 'left';
+  // coordinates, centred between the number and the bearing group
+  if (shot.position) {
+    const coordSize = Math.round(stripH * 0.17);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(236,233,225,0.55)';
+    ctx.font = `500 ${coordSize}px "Space Mono", monospace`;
+    ctx.font = `600 ${textSize}px "Space Mono", monospace`;
+    const numW = ctx.measureText(seqStr).width;
+    ctx.font = `500 ${coordSize}px "Space Mono", monospace`;
+    ctx.fillText(`${shot.position.lat.toFixed(5)}\u00B0, ${shot.position.lng.toFixed(5)}\u00B0`,
+      pad + numW + Math.round(W * 0.035), midY);
+  }
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 
   const blob = await new Promise(res => cv.toBlob(res, 'image/jpeg', 0.92));
   if (!blob) return;
@@ -1131,11 +1192,10 @@ async function capturePhoto(shot) {
     const ok = await putPending(shot.seq, blob, fname);
     if (ok !== false) {
       refreshPendingCount(); updateHeldBadge();
-      checkStorage();                       // warn while there's still room to act
+      checkStorage();
+      maybeAutoSave();                      // checkpoint every N so they never pile up
       return;
     }
-    // Storing failed — almost certainly quota. Don't lose the photo: fall through
-    // to the share sheet and say plainly why it appeared.
     showToast('Storage full — saving this photo now instead', 4000);
   }
 
@@ -1276,12 +1336,22 @@ function syncModeUI() {
   document.querySelectorAll('#modeSeg button').forEach(b =>
     b.classList.toggle('on', b.dataset.mode === saveMode));
   $('modeHint').textContent = saveMode === 'batch'
-    ? 'Photos are held in the app until you tap Save photos. Fewer interruptions while shooting — but browser storage on iPhone is limited, often only tens of photos. Watch the bar below and save often.'
+    ? 'Photos are held in the app and saved as a set, so shooting isn\'t interrupted every shot.'
     : 'iOS opens the share sheet after each capture. Tap Save Image to put the photo in your camera roll straight away.';
+  const seg = $('everySeg'), eh = $('everyHint');
+  seg.style.display = saveMode === 'batch' ? 'flex' : 'none';
+  eh.style.display  = saveMode === 'batch' ? 'block' : 'none';
+  seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.every === saveEvery));
+  eh.textContent = saveEvery
+    ? `You'll be offered a save once ${saveEvery} photos are held. iPhone storage is limited, so a checkpoint keeps the set small enough to be safe.`
+    : 'No prompts — photos are held until you tap Save photos. Watch the storage bar; nothing is in your camera roll until you save.';
   refreshPendingCount();
 }
 document.querySelectorAll('#modeSeg button').forEach(b => b.addEventListener('click', () => {
   saveMode = b.dataset.mode; save(); syncModeUI();
+}));
+document.querySelectorAll('#everySeg button').forEach(b => b.addEventListener('click', () => {
+  saveEvery = +b.dataset.every; save(); syncModeUI();
 }));
 
 let pendingCount = 0;
@@ -1304,9 +1374,12 @@ async function refreshPendingCount() {
 }
 
 // Share every held photo in one sheet.
-$('saveAllBtn').addEventListener('click', async () => {
-  const btn = $('saveAllBtn'); const old = btn.textContent;
-  btn.disabled = true; btn.textContent = 'Preparing…';
+// Share every held photo in one sheet. Used by the Save button and the
+// every-N checkpoint, so the behaviour can't drift between them.
+async function saveAllPending() {
+  const btn = $('saveAllBtn');
+  const old = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Preparing…'; }
   try {
     const list = await getAllPending();
     if (!list.length) { showToast('No photos waiting', 2200); return; }
@@ -1323,8 +1396,32 @@ $('saveAllBtn').addEventListener('click', async () => {
     } else {
       showToast('Sharing several files at once isn\'t supported here', 3000);
     }
-  } finally { btn.textContent = old; refreshPendingCount(); renderStorage(); }
-});
+  } finally {
+    if (btn) btn.textContent = old;
+    refreshPendingCount(); renderStorage();
+  }
+}
+$('saveAllBtn').addEventListener('click', saveAllPending);
+
+// Once `saveEvery` photos are held, offer to save without making it modal —
+// the toast waits, shooting continues, and dismissing just defers to the next
+// interval. Never interrupts a shot in progress.
+async function maybeAutoSave() {
+  if (!saveEvery) return;
+  const list = await getAllPending();
+  if (list.length < saveEvery) return;
+  if (list.length % saveEvery !== 0) return;      // fire on 10, 20, 30 — not every shot after 10
+  const t = $('toast');
+  t.innerHTML = `<b>${list.length}</b> photos held &nbsp; <button class="toast-undo" id="autoSaveBtn">Save now</button>`;
+  t.classList.add('show', 'has-action');
+  clearTimeout(window._tt); clearTimeout(window._autoT);
+  window._autoT = setTimeout(() => t.classList.remove('show', 'has-action'), 9000);
+  const btn = $('autoSaveBtn');
+  if (btn) btn.addEventListener('click', () => {
+    t.classList.remove('show', 'has-action'); clearTimeout(window._autoT);
+    saveAllPending();
+  });
+}
 
 // header mark button toggles settings open/closed (splays in place, stays visible top-right)
 
@@ -1370,7 +1467,7 @@ $('jsonFile').addEventListener('change', e => {
       shots = state.shots; trash = state.trash; nextSeq = state.nextSeq;
       currentStyle = state.settings.mapStyle; theme = state.settings.theme; printOpts = state.settings.printOpts;
       zoomOffset = state.settings.zoomOffset; projectName = state.settings.projectName;
-      saveMode = state.settings.saveMode;
+      saveMode = state.settings.saveMode; saveEvery = state.settings.saveEvery; saveEvery = state.settings.saveEvery;
       save(state);
       applyTheme(theme); syncStyleButtons(); syncToggles(); refreshMapBtn();
       if ($('mapView').classList.contains('active')) drawMap();
