@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0c0c0d">
+<meta name="theme-color" content="#0d0d0c">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Field Camera — records position &amp; bearing</title>
@@ -200,18 +200,38 @@
   .reticle .c { position: absolute; top: 50%; left: 50%; width: 3px; height: 3px; transform: translate(-50%,-50%); border: 1px solid rgba(236,233,225,0.7); border-radius: 50%; }
 
   /* minimal readout */
+  /* Viewfinder readout mirrors the burned-in data block: hard bar, tracked
+     labels over tabular values, hairline rules, compass hard right. The only
+     difference on screen is the compass — the bezel turns under a fixed index,
+     because here you are turning the phone. */
   .readout { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
-    padding: 28px 20px 18px;
-    background: linear-gradient(to top, color-mix(in srgb, var(--bg) 92%, transparent), color-mix(in srgb, var(--bg) 50%, transparent) 55%, transparent);
-    display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; pointer-events: none; }
-  .readout .col { display: flex; flex-direction: column; gap: 10px; }
-  .readout .v { font-family: var(--num); font-size: 16px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+    padding: 7px 11px 9px;
+    background: rgba(13,13,12,0.94);
+    border-top: 1px solid rgba(235,233,229,0.55);
+    display: flex; justify-content: space-between; align-items: center; gap: 8px; pointer-events: none; }
+  .readout .fields { display: flex; align-items: center; gap: 0; min-width: 0; flex: 1 1 auto;
+    overflow: hidden; }
+  .readout .fld { display: flex; flex-direction: column; gap: 3px; padding: 0 9px; position: relative;
+    flex: 0 0 auto; }
+  .readout .fld:first-child { padding-left: 0; }
+  .readout .fld + .fld::before { content: ''; position: absolute; left: 0; top: 2px; bottom: 2px;
+    width: 1px; background: rgba(235,233,229,0.28); }
+  .readout .fld i { font-family: var(--mono); font-style: normal; font-size: 8px;
+    letter-spacing: 0.14em; color: rgba(235,233,229,0.55); }
+  .readout .fld b { font-family: var(--mono); font-size: 14px; font-weight: 700; line-height: 1;
+    font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .readout .site { font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em;
+    color: rgba(235,233,229,0.55); white-space: nowrap; text-align: right;
+    overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; max-width: 34%;
+    align-self: flex-start; padding-top: 1px; font-size: 8px; letter-spacing: 0.12em; }
 
-  .compass { width: 132px; height: 132px; position: relative; flex-shrink: 0; pointer-events: auto; }
-  .compass .lubber { position: absolute; top: 9px; left: 50%; width: 0; height: 0; transform: translateX(-50%);
+  .compass { width: 62px; height: 62px; position: relative; flex-shrink: 0; pointer-events: auto; }
+  .compass .lubber { position: absolute; top: 4px; left: 50%; width: 0; height: 0; transform: translateX(-50%);
     border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid var(--accent); z-index: 3; }
   .compass .bezel { position: absolute; inset: 0; transition: transform 0.18s linear; }
-  .compass .bezel svg { width: 100%; height: 100%; display: block; }
+  .compass .bezel svg { width: 100%; height: 100%; display: block; position: relative; z-index: 1; }
+  .compass .bzmap { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0;
+    border-radius: 50%; }
   .compass .deg { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; }
   .compass .deg b { font-family: var(--num); font-size: 25px; font-weight: 700; line-height: 1; }
   .compass .deg s { font-family: var(--mono); font-size: 8px; letter-spacing: 0.24em; color: var(--ink-mid); text-decoration: none; margin-top: 3px; }
@@ -371,11 +391,15 @@
     <video id="video" autoplay playsinline muted></video>
     <div class="reticle"><span class="v up"></span><span class="v dn"></span><span class="h lf"></span><span class="h rt"></span><span class="c"></span></div>
     <div class="readout">
-      <div class="col"><div class="v" id="coords">— —</div></div>
+      <div class="fields" id="vfFields">
+        <div class="fld"><i>FRAME</i><b id="vfFrame">—</b></div>
+        <div class="fld"><i>BEARING</i><b id="vfBrg">—</b></div>
+        <div class="fld" id="vfElevFld"><i>ELEV</i><b id="vfElev">—</b></div>
+      </div>
+      <div class="site" id="vfSite"></div>
       <div class="compass">
         <div class="lubber"></div>
-        <div class="bezel" id="bezel"><svg viewBox="-15 -15 130 130" id="bezelSvg"></svg></div>
-        <div class="deg"><b id="degVal">—</b><s id="degCard">no fix</s></div>
+        <div class="bezel" id="bezel"><canvas class="bzmap" id="bezelMap" width="150" height="150"></canvas><svg viewBox="-15 -15 130 130" id="bezelSvg"></svg></div>
       </div>
     </div>
     <div class="cam-msg">Camera asleep — tap Wake</div>
@@ -487,6 +511,8 @@
         <div class="set-hint" id="pendHint"></div>
         <div class="toggle-row" style="margin-top:14px"><div class="tl">Map in compass<small>Burns a map snippet into the dial</small></div><button class="tgl on" id="tgAerial" data-k="aerial"></button></div>
         <div class="set-hint" id="aerialHint"></div>
+        <div class="toggle-row"><div class="tl">Elevation on photo<small>Adds an ELEV column to the burned-in block</small></div><button class="tgl on" id="tgAlt"></button></div>
+        <div class="set-hint" id="altHint"></div>
         <div class="storage-bar"><span id="storageFill"></span></div>
         <div class="set-hint" id="storageHint">Checking storage…</div>
       </div>
@@ -553,6 +579,8 @@
 const $ = id => document.getElementById(id);
 const video = $('video');
 
+const LOOK_WORD = { N:'NORTH', NE:'NORTH EAST', E:'EAST', SE:'SOUTH EAST',
+  S:'SOUTH', SW:'SOUTH WEST', W:'WEST', NW:'NORTH WEST' };
 const CARDS = ['N','NE','E','SE','S','SW','W','NW'];
 const card = d => CARDS[Math.round(((d % 360) / 45)) % 8];
 
@@ -575,7 +603,8 @@ let saveMode = 'batch';  // 'shot' = share sheet per capture | 'batch' = hold, s
 // Batch is the default, but photos are never left to pile up indefinitely:
 // after this many are held, the app prompts to save. 0 = only save manually.
 let saveEvery = 10;
-let useAerial = true;   // aerial snippet inside the burned-in dial
+let useAerial = true;   // map snippet inside the burned-in dial
+let showAlt = true;     // elevation column in the burned-in data block
 const ZOOM_MIN = -2, ZOOM_MAX = 2;
 
 // ── photo thumbnails live in IndexedDB (media, no 5MB cliff) — dataURLs, not Blobs (iOS) ──
@@ -729,7 +758,8 @@ function normalize(raw) {
     projectName: (typeof set.projectName === 'string' ? set.projectName : '').slice(0, 60),
     saveMode: set.saveMode === 'shot' ? 'shot' : 'batch',
     saveEvery: [0, 5, 10, 20].includes(set.saveEvery) ? set.saveEvery : 10,
-    useAerial: set.useAerial !== false
+    useAerial: set.useAerial !== false,
+    showAlt: set.showAlt !== false
   };
   return s;
 }
@@ -756,7 +786,7 @@ function load() {
   currentStyle = state.settings.mapStyle; theme = state.settings.theme; printOpts = state.settings.printOpts;
   zoomOffset = state.settings.zoomOffset; projectName = state.settings.projectName;
   saveMode = state.settings.saveMode; saveEvery = state.settings.saveEvery;
-  useAerial = state.settings.useAerial;
+  useAerial = state.settings.useAerial; showAlt = state.settings.showAlt;
   save(state);            // write the migrated shape back
   // one-time: clear the old scattered keys now that they're folded in
   try { ['fieldcam.shots','fieldcam.nextSeq','fieldcam.mapStyle','fieldcam.theme','fieldcam.printOpts','fieldcam.thumbs']
@@ -773,7 +803,7 @@ function load() {
   return state;
 }
 function currentState() {
-  return { v: SCHEMA_V, shots, trash, nextSeq, settings: { mapStyle: currentStyle, theme, printOpts, zoomOffset, projectName, saveMode, saveEvery, useAerial } };
+  return { v: SCHEMA_V, shots, trash, nextSeq, settings: { mapStyle: currentStyle, theme, printOpts, zoomOffset, projectName, saveMode, saveEvery, useAerial, showAlt } };
 }
 function save(state) {
   try { localStorage.setItem(STATE_KEY, JSON.stringify(state || currentState())); return true; }
@@ -874,7 +904,7 @@ function prefetchDialTile(lat, lng) {
   dialPending = true;
   const style = currentStyle;
   loadTile(DIAL_ZOOM, tx, ty)
-    .then(img => { dialPending = false; dialTile = { img, tx, ty, style }; })
+    .then(img => { dialPending = false; dialTile = { img, tx, ty, style }; paintBezelMap(); })
     .catch(() => { dialPending = false; });
 }
 
@@ -928,9 +958,47 @@ function startGeolocation() {
     currentPosition = { lat: p.coords.latitude, lng: p.coords.longitude, alt: p.coords.altitude };
     prefetchDialTile(currentPosition.lat, currentPosition.lng);   // ready before the shutter, not at it
     currentAccuracy = p.coords.accuracy;
-    $('coords').innerHTML = `${p.coords.latitude.toFixed(5)}°<br>${p.coords.longitude.toFixed(5)}°`;
+    syncReadout();
     if (p.coords.heading != null && !isNaN(p.coords.heading)) setHeading(p.coords.heading);
   }, () => {}, { enableHighAccuracy: true, maximumAge: 1000 });
+}
+
+// Fills the viewfinder bar from the same values the burn-in will use, and
+// respects the same settings — so what you see is what gets burned.
+// Paints the prefetched tile into the on-screen compass face. Same tile, same
+// zoom, same veil as the burn-in — so the dial you shoot through and the dial
+// on the photo are the same object.
+function paintBezelMap() {
+  const c = $('bezelMap'); if (!c) return;
+  const x = c.getContext('2d');
+  x.clearRect(0, 0, c.width, c.height);
+  if (!useAerial || !dialTile || !currentPosition) return;
+  try {
+    const t = lonLatToTile(currentPosition.lng, currentPosition.lat, DIAL_ZOOM);
+    const ox = (t.x - dialTile.tx) * TILE, oy = (t.y - dialTile.ty) * TILE;
+    const span = 160, R = c.width / 2;
+    // the SVG ring sits at r=47 in a 130-unit box, so match that inset
+    const ringR = R * (47 / 65);
+    x.save();
+    x.beginPath(); x.arc(R, R, ringR, 0, Math.PI * 2); x.clip();
+    x.drawImage(dialTile.img, ox - span / 2, oy - span / 2, span, span,
+                R - ringR, R - ringR, ringR * 2, ringR * 2);
+    x.fillStyle = 'rgba(13,13,12,0.34)';
+    x.fillRect(R - ringR, R - ringR, ringR * 2, ringR * 2);
+    x.restore();
+  } catch (e) { /* no usable tile — stay a plain dial */ }
+}
+
+function syncReadout() {
+  const f = $('vfFrame'); if (!f) return;
+  f.textContent = String(nextSeq).padStart(3, '0');
+  const eF = $('vfElevFld'), eV = $('vfElev');
+  const hasAlt = showAlt && currentPosition && currentPosition.alt != null;
+  if (eF) eF.style.display = hasAlt ? '' : 'none';
+  if (hasAlt) eV.textContent = `${Math.round(currentPosition.alt * 3.28084)} FT`;
+  const st = $('vfSite');
+  if (st) st.textContent = projectName ? projectName.toUpperCase() : '';
+  paintBezelMap();
 }
 
 // ── compass ──
@@ -970,8 +1038,7 @@ function startGeolocation() {
 function setHeading(h) {
   currentHeading = h;
   const r = Math.round(h);
-  $('degVal').textContent = r;
-  $('degCard').textContent = card(h);
+  const brg = $('vfBrg'); if (brg) brg.textContent = `${r}\u00B0 ${card(h)}`;
   // Rotate bezel opposite to heading so the faced direction sits under the lubber line.
   $('bezel').style.transform = `rotate(${-h}deg)`;
 }
@@ -1006,7 +1073,7 @@ async function startCompass(orientPromise) {
   } catch (e) { showCompassBlocked(); }
 }
 function showCompassBlocked() {
-  const el = $('degCard'); if (el) el.textContent = 'TAP TO RETRY';
+  const el = $('vfBrg'); if (el) el.textContent = 'TAP TO RETRY';
 }
 // tapping the compass re-requests orientation permission if it was denied
 (function () {
@@ -1125,7 +1192,10 @@ function showToast(html, ms = 1800) {
 // Letters and ticks reach 1.26x the ring radius, so callers must inset by
 // dialSpan(r), not r, or the glyphs clip off the frame edge.
 function dialSpan(r) { return r * 62 / 47; }
-function burnDial(ctx, cx, cy, r, heading, pos, dialLabel) {
+// Compass for the data bar. Reticle furniture over the map face — the same
+// tile pipeline the map view uses, prefetched on a GPS fix. Cardinal ticks sit
+// on the ring rather than outside it, so the dial fits a bar without clipping.
+function burnDial(ctx, cx, cy, r, heading, pos) {
   const U = r / 47;
   ctx.save();
   ctx.translate(cx, cy);
@@ -1142,7 +1212,7 @@ function burnDial(ctx, cx, cy, r, heading, pos, dialLabel) {
       ctx.beginPath(); ctx.arc(0, 0, 47 * U, 0, Math.PI * 2); ctx.clip();
       ctx.drawImage(dialTile.img, ox - span / 2, oy - span / 2, span, span,
                     -47 * U, -47 * U, 94 * U, 94 * U);
-      ctx.fillStyle = 'rgba(13,13,12,0.22)';
+      ctx.fillStyle = 'rgba(13,13,12,0.34)';   // hold the furniture legible
       ctx.fillRect(-47 * U, -47 * U, 94 * U, 94 * U);
       ctx.restore();
       painted = true;
@@ -1153,63 +1223,34 @@ function burnDial(ctx, cx, cy, r, heading, pos, dialLabel) {
     ctx.fillStyle = 'rgba(13,13,12,0.45)'; ctx.fill();
   }
 
-  // double hairline ring
   ctx.beginPath(); ctx.arc(0, 0, 47 * U, 0, Math.PI * 2);
-  ctx.strokeStyle = 'rgba(235,233,229,0.85)'; ctx.lineWidth = Math.max(0.7, 0.9 * U); ctx.stroke();
-  ctx.beginPath(); ctx.arc(0, 0, 44 * U, 0, Math.PI * 2);
-  ctx.strokeStyle = 'rgba(235,233,229,0.30)'; ctx.lineWidth = Math.max(0.5, 0.6 * U); ctx.stroke();
+  ctx.strokeStyle = '#ebe9e5'; ctx.lineWidth = Math.max(0.8, 1 * U); ctx.stroke();
 
-  // view cone — the wedge you faced. Darken the complement so it reads on any
-  // imagery; a white wedge alone vanishes on pale tiles.
-  const a0 = (heading - 90) * Math.PI / 180, spread = 0.40;
+  // view cone
+  const a0 = (heading - 90) * Math.PI / 180, sp = 0.40;
   ctx.save();
   ctx.beginPath(); ctx.arc(0, 0, 44 * U, 0, Math.PI * 2); ctx.clip();
-  ctx.beginPath(); ctx.arc(0, 0, 44 * U, a0 + spread, a0 - spread); ctx.lineTo(0, 0); ctx.closePath();
-  ctx.fillStyle = 'rgba(13,13,12,0.40)'; ctx.fill();
-  const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, 44 * U);
-  cg.addColorStop(0, 'rgba(235,233,229,0.34)');
-  cg.addColorStop(1, 'rgba(235,233,229,0.05)');
-  ctx.fillStyle = cg;
-  ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 44 * U, a0 - spread, a0 + spread);
-  ctx.closePath(); ctx.fill();
+  ctx.globalAlpha = 0.32;
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 44 * U, a0 - sp, a0 + sp); ctx.closePath();
+  ctx.fillStyle = '#ebe9e5'; ctx.fill();
+  ctx.globalAlpha = 1;
   ctx.restore();
-  ctx.strokeStyle = 'rgba(235,233,229,0.75)'; ctx.lineWidth = Math.max(0.6, 1 * U);
-  [a0 - spread, a0 + spread].forEach(a => {
-    ctx.beginPath();
-    ctx.moveTo(Math.cos(a) * 22 * U, Math.sin(a) * 22 * U);
-    ctx.lineTo(Math.cos(a) * 44 * U, Math.sin(a) * 44 * U);
-    ctx.stroke();
-  });
 
-  // cardinal ticks pierce the ring; letters sit outside it
-  [['N', 0], ['E', 90], ['S', 180], ['W', 270]].forEach(([ch, d]) => {
+  // cardinal ticks on the ring
+  [0, 90, 180, 270].forEach(d => {
     const a = (d - 90) * Math.PI / 180;
     ctx.beginPath();
     ctx.moveTo(Math.cos(a) * 40 * U, Math.sin(a) * 40 * U);
-    ctx.lineTo(Math.cos(a) * 52 * U, Math.sin(a) * 52 * U);
-    ctx.strokeStyle = '#ebe9e5'; ctx.lineWidth = Math.max(0.7, 1.1 * U); ctx.stroke();
-  });
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.font = `700 ${Math.max(5, 9 * U)}px "Space Mono", monospace`;
-  [['N', 0], ['E', 90], ['S', 180], ['W', 270]].forEach(([ch, d]) => {
-    const a = (d - 90) * Math.PI / 180, rr = 59 * U;
-    ctx.fillStyle = 'rgba(13,13,12,0.70)';
-    ctx.fillText(ch, Math.cos(a) * rr + Math.max(0.6, U), Math.sin(a) * rr + Math.max(0.6, U));
-    ctx.fillStyle = ch === 'N' ? '#ebe9e5' : 'rgba(235,233,229,0.72)';
-    ctx.fillText(ch, Math.cos(a) * rr, Math.sin(a) * rr);
+    ctx.lineTo(Math.cos(a) * 54 * U, Math.sin(a) * 54 * U);
+    ctx.strokeStyle = '#ebe9e5'; ctx.lineWidth = Math.max(0.7, 1.2 * U); ctx.stroke();
   });
 
-  // needle: from the open centre out to the ring, on the heading
+  // needle
   ctx.save();
   ctx.rotate(heading * Math.PI / 180);
-  ctx.beginPath(); ctx.moveTo(0, -44 * U); ctx.lineTo(0, 12 * U);
-  ctx.strokeStyle = '#ebe9e5'; ctx.lineWidth = Math.max(0.8, 1.4 * U); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -44 * U); ctx.lineTo(0, 10 * U);
+  ctx.strokeStyle = '#ebe9e5'; ctx.lineWidth = Math.max(1, 1.8 * U); ctx.stroke();
   ctx.restore();
-
-  // open centre — drafting register, not a solid hub
-  ctx.beginPath(); ctx.arc(0, 0, 3.4 * U, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(13,13,12,0.80)'; ctx.fill();
-  ctx.strokeStyle = '#ebe9e5'; ctx.lineWidth = Math.max(0.6, 1 * U); ctx.stroke();
 
   ctx.restore();
 }
@@ -1219,63 +1260,70 @@ function burnDial(ctx, cx, cy, r, heading, pos, dialLabel) {
 // (banned; a crisp 1px offset does the separation work instead).
 const INK = '#ebe9e5';
 const INK_DIM = 'rgba(235,233,229,0.62)';
+// Burn-in — reconnaissance data block. Fixed-width labelled columns in one
+// hard bar, hairline rules between them, compass at the right. Columns are
+// sized to their own content so a long value can never run into the next.
 function drawBurnIn(ctx, W, H, shot) {
-  const pad     = Math.round(W * 0.0275);
-  const readSz  = Math.round(W * 0.028);
-  const lblSz   = Math.round(readSz * 0.78);
-  const numSz   = Math.round(readSz * 1.75);
-  const r       = Math.round(W * 0.22 / 2);
+  const col = '#ebe9e5';
+  const bh = Math.round(H * 0.088);
+  const pad = Math.round(W * 0.028);
+  const lf = Math.round(bh * 0.17);
+  const vf = Math.round(bh * 0.255);
 
-  // the viewfinder's own scrim: bg 92% -> 50% at 55% height -> transparent
-  const gh = Math.round(H * 0.24);
-  const g = ctx.createLinearGradient(0, H - gh, 0, H);
-  g.addColorStop(0, 'rgba(13,13,12,0)');
-  g.addColorStop(0.45, 'rgba(13,13,12,0.50)');
-  g.addColorStop(1, 'rgba(13,13,12,0.92)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, H - gh, W, gh);
+  ctx.fillStyle = 'rgba(13,13,12,0.94)';
+  ctx.fillRect(0, H - bh, W, bh);
+  ctx.fillStyle = col; ctx.globalAlpha = 0.55;
+  ctx.fillRect(0, H - bh, W, Math.max(1, H * 0.0013));
+  ctx.globalAlpha = 1;
 
-  // crisp offset — ink over its own shadow colour, one pixel down-right
-  const off = Math.max(1, Math.round(readSz * 0.06));
-  const put = (txt, x, y, font, ink) => {
-    ctx.font = font;
-    ctx.fillStyle = 'rgba(13,13,12,0.65)';
-    ctx.fillText(txt, x + off, y + off);
-    ctx.fillStyle = ink;
-    ctx.fillText(txt, x, y);
-  };
+  const hdg = shot.heading != null;
+  // Ordered by what a reader needs first — the tail is what drops on a narrow
+  // frame, so LOOKING (a restatement of BEARING) goes last.
+  const fields = [['FRAME', String(shot.seq).padStart(3, '0')]];
+  if (hdg) fields.push(['BEARING', `${Math.round(shot.heading)}\u00B0 ${card(shot.heading)}`]);
+  if (showAlt && shot.position && shot.position.alt != null)
+    fields.push(['ELEV', `${Math.round(shot.position.alt * 3.28084)} FT`]);
+  fields.push(['DATE', new Date(shot.timestamp).toISOString().slice(2, 10).replace(/-/g, '.')]);
+  if (hdg) fields.push(['LOOKING', LOOK_WORD[card(shot.heading)]]);
 
-  // right: compass. Letters sit outside the ring, so inset by the drawn span.
-  if (shot.heading != null) {
-    const span = dialSpan(r);
-    burnDial(ctx, W - pad - span, H - pad - span, r, shot.heading, shot.position, false);
+  const dialR = bh * 0.38;
+  // Project sits INSIDE the bar — above it is bare photo, where pale ground
+  // makes it unreadable. Its width is reserved so no column runs into it.
+  const site = projectName ? projectName.toUpperCase() : '';
+  ctx.font = `400 ${lf}px "Space Mono", monospace`;
+  const siteW = site ? ctx.measureText(site).width + W * 0.022 : 0;
+  const limit = W - pad - (hdg ? bh * 1.1 : 0) - siteW;
+  let x = pad;
+  for (const [i, [k, v]] of fields.entries()) {
+    ctx.font = `400 ${lf}px "Space Mono", monospace`;
+    const kw = ctx.measureText(k).width;
+    ctx.font = `700 ${vf}px "Space Mono", monospace`;
+    const vw = ctx.measureText(v).width;
+    const cw = Math.max(kw, vw);
+    if (x + cw > limit) break;              // drop rather than run under the dial
+    if (i) {
+      ctx.globalAlpha = 0.28; ctx.fillStyle = col;
+      ctx.fillRect(x - W * 0.011, H - bh + bh * 0.18, Math.max(1, W * 0.0011), bh * 0.64);
+      ctx.globalAlpha = 1;
+    }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = col; ctx.globalAlpha = 0.55;
+    ctx.font = `400 ${lf}px "Space Mono", monospace`;
+    ctx.fillText(k, x, H - bh + bh * 0.36);
+    ctx.globalAlpha = 1;
+    ctx.font = `700 ${vf}px "Space Mono", monospace`;
+    ctx.fillText(v, x, H - bh + bh * 0.76);
+    x += cw + W * 0.022;
   }
 
-  // left stack, bottom-up: project, elevation, then number | bearing
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
-  let y = H - pad;
-  if (projectName) {
-    put(projectName.toUpperCase(), pad, y, `400 ${lblSz}px "Space Mono", monospace`, INK_DIM);
-    y -= lblSz * 1.7;
-  }
-  if (shot.position && shot.position.alt != null) {
-    put(`ALT ${Math.round(shot.position.alt * 3.28084)} FT`, pad, y,
-        `700 ${lblSz}px "Space Mono", monospace`, INK);
-    y -= lblSz * 1.9;
+  if (site) {
+    ctx.font = `400 ${lf}px "Space Mono", monospace`;
+    ctx.fillStyle = col; ctx.globalAlpha = 0.55; ctx.textAlign = 'right';
+    ctx.fillText(site, W - pad - (hdg ? bh * 1.1 : 0), H - bh + bh * 0.36);
+    ctx.globalAlpha = 1; ctx.textAlign = 'left';
   }
 
-  const seqStr = String(shot.seq).padStart(3, '0');
-  put(seqStr, pad, y, `700 ${numSz}px "Space Mono", monospace`, INK);
-  ctx.font = `700 ${numSz}px "Space Mono", monospace`;
-  let x = pad + ctx.measureText(seqStr).width + numSz * 0.34;
-
-  if (shot.heading != null) {
-    put('|', x, y, `400 ${numSz}px "Space Mono", monospace`, INK_DIM);
-    x += ctx.measureText('|').width + numSz * 0.34;
-    put(`${Math.round(shot.heading)}\u00B0 ${card(shot.heading)}`, x, y,
-        `700 ${Math.round(numSz * 0.62)}px "Space Mono", monospace`, INK);
-  }
+  if (hdg) burnDial(ctx, W - pad - bh * 0.42, H - bh / 2, dialR, shot.heading, shot.position);
 }
 
 async function capturePhoto(shot) {
@@ -1352,6 +1400,7 @@ function refreshMapBtn() {
   const n = shots.length;
   $('mapBtn').disabled = n === 0;
   $('mapBtn').innerHTML = `Map <span class="num">(${n})</span>`;
+  syncReadout();
 }
 
 // ============================================================
@@ -1462,10 +1511,18 @@ function syncAerialUI() {
   $('aerialHint').textContent = useAerial
     ? 'Uses the same map tiles as the Map view, fetched when you get a fix. Open the map once on site and they\'re already cached. Captures with no tile get the plain compass.'
     : 'Compass only. Drawn from the device, works anywhere.';
+  const a = $('tgAlt'); if (a) a.classList.toggle('on', showAlt);
+  const ah = $('altHint');
+  if (ah) ah.textContent = showAlt
+    ? 'Shown when the device reports altitude. Captures without it simply omit the column.'
+    : 'Elevation is still recorded and exported — just not burned into the photo.';
 }
+$('tgAlt').addEventListener('click', () => {
+  showAlt = !showAlt; save(); syncAerialUI(); syncReadout();
+});
 $('tgAerial').addEventListener('click', () => {
   useAerial = !useAerial; if (!useAerial) dialTile = null;
-  save(); syncAerialUI();
+  save(); syncAerialUI(); syncReadout();
 });
 
 function syncModeUI() {
@@ -1647,8 +1704,8 @@ $('jsonFile').addEventListener('change', e => {
       currentStyle = state.settings.mapStyle; theme = state.settings.theme; printOpts = state.settings.printOpts;
       zoomOffset = state.settings.zoomOffset; projectName = state.settings.projectName;
       saveMode = state.settings.saveMode; saveEvery = state.settings.saveEvery;
-      useAerial = state.settings.useAerial;
-  useAerial = state.settings.useAerial; saveEvery = state.settings.saveEvery;
+      useAerial = state.settings.useAerial; showAlt = state.settings.showAlt; showAlt = state.settings.showAlt;
+  useAerial = state.settings.useAerial; showAlt = state.settings.showAlt; saveEvery = state.settings.saveEvery;
       save(state);
       applyTheme(theme); syncStyleButtons(); syncToggles(); refreshMapBtn();
       if ($('mapView').classList.contains('active')) drawMap();

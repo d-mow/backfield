@@ -1,7 +1,7 @@
 /* Field Camera service worker — offline shell.
    Bump CACHE on any shipped change so clients pick up the new build.
    HTML is served network-first, so app updates land even without a bump. */
-const CACHE = 'fieldcam-v2';
+const CACHE = 'fieldcam-v5';
 const SHELL = [
   '/field-camera/',
   '/field-camera/index.html',
