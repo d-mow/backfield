@@ -130,9 +130,8 @@
   .mini.busy { position: relative; overflow: hidden; color: var(--ink-mid); }
   .mini.busy .bar { position: absolute; left: 0; bottom: 0; height: 2px; width: 0;
     background: var(--accent); transition: width .25s ease; }
-  .mini.busy .barlabel { position: relative; z-index: 1; }
   @keyframes bfPulse { 0%,100% { opacity: 1 } 50% { opacity: .45 } }
-  .mini.busy .barlabel { animation: bfPulse 1.1s ease-in-out infinite; }
+  .mini.busy .barlabel { position: relative; z-index: 1; animation: bfPulse 1.1s ease-in-out infinite; }
   .bf-link { display: inline-block; margin-top: 10px; font-family: var(--mono); font-size: 10px;
     letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink);
     border-bottom: 1px solid var(--line); padding-bottom: 3px; text-decoration: none; }
@@ -183,7 +182,7 @@
   .paper .pgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6pt; margin-top: 6pt; }
   .paper .pcell { border: 0.5pt solid #000; margin: 0; }
   .paper .pcell img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
-  .paper .pcell figcaption { font-family: 'Space Mono', monospace; font-size: 7.5pt; padding: 3pt 4pt; border-top: 0.5pt solid #000; }
+  .paper .pcell figcaption { font-family: 'Space Mono', monospace; font-size: 7.5pt; padding: 3pt 4pt; border-top: 0.5pt solid #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* VIEWFINDER */
   .finder { flex: 1; position: relative; overflow: hidden; background: #000; min-height: 0; }
@@ -208,13 +207,13 @@
   .readout .col { display: flex; flex-direction: column; gap: 10px; }
   .readout .v { font-family: var(--num); font-size: 16px; line-height: 1.2; font-variant-numeric: tabular-nums; }
 
-  .compass { width: 104px; height: 104px; position: relative; flex-shrink: 0; pointer-events: auto; }
-  .compass .lubber { position: absolute; top: -3px; left: 50%; width: 0; height: 0; transform: translateX(-50%);
+  .compass { width: 132px; height: 132px; position: relative; flex-shrink: 0; pointer-events: auto; }
+  .compass .lubber { position: absolute; top: 9px; left: 50%; width: 0; height: 0; transform: translateX(-50%);
     border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid var(--accent); z-index: 3; }
   .compass .bezel { position: absolute; inset: 0; transition: transform 0.18s linear; }
   .compass .bezel svg { width: 100%; height: 100%; display: block; }
   .compass .deg { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2; }
-  .compass .deg b { font-family: var(--num); font-size: 28px; font-weight: 700; line-height: 1; }
+  .compass .deg b { font-family: var(--num); font-size: 25px; font-weight: 700; line-height: 1; }
   .compass .deg s { font-family: var(--mono); font-size: 8px; letter-spacing: 0.24em; color: var(--ink-mid); text-decoration: none; margin-top: 3px; }
 
   /* CONTROLS */
@@ -308,6 +307,11 @@
   .shot-info .label { margin-bottom: 3px; }
   .shot-info .v { font-family: var(--num); font-size: 16px; font-variant-numeric: tabular-nums; line-height: 1.3; }
   .shot-info .v.small { font-size: 12px; color: var(--ink-mid); }
+  .shot-info .si-note { grid-column: 1 / -1; font-family: var(--mono); font-size: 11px;
+    line-height: 1.5; color: var(--ink-mid); border-left: 2px solid var(--line); padding-left: 8px; }
+  .note-input { width: 100%; background: var(--bg-soft); border: 1px solid var(--line); color: var(--ink);
+    font-family: var(--sans, system-ui); font-size: 16px; padding: 9px 10px; border-radius: 2px; margin-bottom: 8px; }
+  .note-input:focus { outline: none; border-color: var(--ink-mid); }
   .shot-info .si-num { font-family: var(--display); font-weight: 800; font-stretch: 125%;
     font-size: 30px; line-height: 1; letter-spacing: -0.02em; color: var(--accent); margin: 2px 0 5px; }
   .si-actions { grid-column: 1 / -1; margin-top: 4px; }
@@ -342,7 +346,7 @@
     .pgrid { display:grid; grid-template-columns:repeat(5, 1fr); gap:6pt; margin-top:6pt; }
     .pcell { break-inside:avoid; page-break-inside:avoid; border:0.5pt solid #000; margin:0; }
     .pcell img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; }
-    .pcell figcaption { font-family:'Space Mono', monospace; font-size:6.5pt; letter-spacing:0.16em; padding:3pt 4pt; border-top:0.5pt solid #000; }
+    .pcell figcaption { font-family:'Space Mono', monospace; font-size:6.5pt; letter-spacing:0.16em; padding:3pt 4pt; border-top:0.5pt solid #000; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     a[href]::after { content:none !important; }
   }
 </style>
@@ -370,7 +374,7 @@
       <div class="col"><div class="v" id="coords">— —</div></div>
       <div class="compass">
         <div class="lubber"></div>
-        <div class="bezel" id="bezel"><svg viewBox="0 0 100 100" id="bezelSvg"></svg></div>
+        <div class="bezel" id="bezel"><svg viewBox="-15 -15 130 130" id="bezelSvg"></svg></div>
         <div class="deg"><b id="degVal">—</b><s id="degCard">no fix</s></div>
       </div>
     </div>
@@ -481,6 +485,8 @@
         <div class="set-hint" id="everyHint"></div>
         <button class="mini wide" id="saveAllBtn" style="margin-top:10px">Save photos</button>
         <div class="set-hint" id="pendHint"></div>
+        <div class="toggle-row" style="margin-top:14px"><div class="tl">Map in compass<small>Burns a map snippet into the dial</small></div><button class="tgl on" id="tgAerial" data-k="aerial"></button></div>
+        <div class="set-hint" id="aerialHint"></div>
         <div class="storage-bar"><span id="storageFill"></span></div>
         <div class="set-hint" id="storageHint">Checking storage…</div>
       </div>
@@ -502,6 +508,8 @@
         <div class="h">Data</div>
         <div class="set-row2">
           <button class="mini" id="exportBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export CSV</button>
+          <button class="mini" id="gpxBtn">Export GPX</button>
+          <button class="mini" id="geojsonBtn">Export GeoJSON</button>
           <button class="mini" id="importBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Import CSV</button>
         </div>
         <input type="file" id="csvFile" accept=".csv,text/csv" style="display:none">
@@ -534,6 +542,14 @@
 </div>
 
 <script>
+/* ============================================================
+   FIELD CAMERA — single-file source (this file IS the app)
+   Order: config → state/storage (normalize is the only migration
+   point) → pure helpers (geo, stats) → tiles → sensors → camera →
+   capture (burn-in) → map view → settings → data (export/import)
+   → print → boot. Schema v2 — see normalize()/normShot().
+   ============================================================ */
+
 const $ = id => document.getElementById(id);
 const video = $('video');
 
@@ -546,7 +562,7 @@ let stream = null, facingMode = 'environment';
 // ── capture store — one state object (fieldcam:state) in localStorage ──
 const STATE_KEY = 'fieldcam:state';   // { v, shots, nextSeq, settings }
 const LEGACY_THUMBS_KEY = 'fieldcam:thumbs'; // pre-Batch-2 localStorage thumbs (migrated to IDB on load)
-const SCHEMA_V = 1;
+const SCHEMA_V = 2;   // v2 adds shots[].note (string)
 
 let shots = [], trash = [], nextSeq = 1;
 let selectedSeq = null;   // which pin is selected on the map (screen only, never printed)
@@ -559,6 +575,7 @@ let saveMode = 'batch';  // 'shot' = share sheet per capture | 'batch' = hold, s
 // Batch is the default, but photos are never left to pile up indefinitely:
 // after this many are held, the app prompts to save. 0 = only save manually.
 let saveEvery = 10;
+let useAerial = true;   // aerial snippet inside the burned-in dial
 const ZOOM_MIN = -2, ZOOM_MAX = 2;
 
 // ── photo thumbnails live in IndexedDB (media, no 5MB cliff) — dataURLs, not Blobs (iOS) ──
@@ -711,7 +728,8 @@ function normalize(raw) {
     zoomOffset: Math.max(-2, Math.min(2, Number.isFinite(set.zoomOffset) ? Math.round(set.zoomOffset) : 0)),
     projectName: (typeof set.projectName === 'string' ? set.projectName : '').slice(0, 60),
     saveMode: set.saveMode === 'shot' ? 'shot' : 'batch',
-    saveEvery: [0, 5, 10, 20].includes(set.saveEvery) ? set.saveEvery : 10
+    saveEvery: [0, 5, 10, 20].includes(set.saveEvery) ? set.saveEvery : 10,
+    useAerial: set.useAerial !== false
   };
   return s;
 }
@@ -725,7 +743,8 @@ function normShot(r) {
     position: pos,
     heading: Number.isFinite(r.heading) ? r.heading : null,
     accuracy: Number.isFinite(r.accuracy) ? r.accuracy : null,
-    timestamp: Number.isFinite(r.timestamp) ? r.timestamp : Date.now()
+    timestamp: Number.isFinite(r.timestamp) ? r.timestamp : Date.now(),
+    note: (typeof r.note === 'string') ? r.note.slice(0, 280) : ''   // v2; v1 shots land here as ''
   };
 }
 function load() {
@@ -737,6 +756,7 @@ function load() {
   currentStyle = state.settings.mapStyle; theme = state.settings.theme; printOpts = state.settings.printOpts;
   zoomOffset = state.settings.zoomOffset; projectName = state.settings.projectName;
   saveMode = state.settings.saveMode; saveEvery = state.settings.saveEvery;
+  useAerial = state.settings.useAerial;
   save(state);            // write the migrated shape back
   // one-time: clear the old scattered keys now that they're folded in
   try { ['fieldcam.shots','fieldcam.nextSeq','fieldcam.mapStyle','fieldcam.theme','fieldcam.printOpts','fieldcam.thumbs']
@@ -753,7 +773,7 @@ function load() {
   return state;
 }
 function currentState() {
-  return { v: SCHEMA_V, shots, trash, nextSeq, settings: { mapStyle: currentStyle, theme, printOpts, zoomOffset, projectName, saveMode, saveEvery } };
+  return { v: SCHEMA_V, shots, trash, nextSeq, settings: { mapStyle: currentStyle, theme, printOpts, zoomOffset, projectName, saveMode, saveEvery, useAerial } };
 }
 function save(state) {
   try { localStorage.setItem(STATE_KEY, JSON.stringify(state || currentState())); return true; }
@@ -771,6 +791,25 @@ function saveShots() { return save(); }
 // ============================================================
 const TILE = 256;
 const tileCache = new Map();
+// Haversine chain over located shots in sequence order: how far you walked
+// and how long the visit ran. Derived, never stored (backfield-03-data).
+function walkStats() {
+  const seq = shots.filter(s => s.position).sort((a, b) => a.seq - b.seq);
+  let m = 0;
+  for (let i = 1; i < seq.length; i++) {
+    const a = seq[i-1].position, b = seq[i].position;
+    const R = 6371000, dLat = (b.lat-a.lat)*Math.PI/180, dLng = (b.lng-a.lng)*Math.PI/180;
+    const h = Math.sin(dLat/2)**2 + Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+    m += 2*R*Math.asin(Math.sqrt(h));
+  }
+  const times = shots.map(s => s.timestamp);
+  const mins = times.length > 1 ? Math.round((Math.max(...times)-Math.min(...times))/60000) : 0;
+  const ft = m * 3.28084;
+  const dist = ft < 1000 ? `${Math.round(ft)} FT` : `${(ft/5280).toFixed(2)} MI`;
+  const dur = mins < 60 ? `${mins} MIN` : `${Math.floor(mins/60)}H ${mins%60}M`;
+  return { dist, dur, meters: m, mins };
+}
+
 function lonLatToTile(lon, lat, z) {
   const n = Math.pow(2, z);
   const x = (lon + 180) / 360 * n;
@@ -817,6 +856,28 @@ function loadTile(z, x, y) {
   tileCache.set(key, p);
   return p;
 }
+
+// ── map snippet for the burn-in dial ─────────────────────────────────────────
+// Reuses the app's own tile source and cache. These servers are already proven
+// CORS-clean — the printed map composites the same tiles and exports fine — so
+// no separate provider or taint check is needed. Tiles are prefetched on a GPS
+// fix (never at the shutter) and are often already cached from viewing the map.
+const DIAL_ZOOM = 17;
+let dialTile = null;          // { img, tx, ty } for the current position
+let dialPending = false;
+
+function prefetchDialTile(lat, lng) {
+  if (!useAerial || dialPending) return;
+  const c = lonLatToTile(lng, lat, DIAL_ZOOM);
+  const tx = Math.floor(c.x), ty = Math.floor(c.y);
+  if (dialTile && dialTile.tx === tx && dialTile.ty === ty && dialTile.style === currentStyle) return;
+  dialPending = true;
+  const style = currentStyle;
+  loadTile(DIAL_ZOOM, tx, ty)
+    .then(img => { dialPending = false; dialTile = { img, tx, ty, style }; })
+    .catch(() => { dialPending = false; });
+}
+
 let tilesOK = 0, tilesFailed = 0;
 async function renderTilesTo(ctx, dx, dy, dw, dh, lat, lng, zoom) {
   const c = lonLatToTile(lng, lat, zoom);
@@ -865,6 +926,7 @@ function startGeolocation() {
   if (!navigator.geolocation) return;
   navigator.geolocation.watchPosition(p => {
     currentPosition = { lat: p.coords.latitude, lng: p.coords.longitude, alt: p.coords.altitude };
+    prefetchDialTile(currentPosition.lat, currentPosition.lng);   // ready before the shutter, not at it
     currentAccuracy = p.coords.accuracy;
     $('coords').innerHTML = `${p.coords.latitude.toFixed(5)}°<br>${p.coords.longitude.toFixed(5)}°`;
     if (p.coords.heading != null && !isNaN(p.coords.heading)) setHeading(p.coords.heading);
@@ -875,35 +937,33 @@ function startGeolocation() {
 // Build the rotating bezel: 72 ticks (every 5°), majors at cardinals with letters.
 
 (function buildBezel() {
+  // On-screen twin of burnDial's reticle: hairline double ring, cardinal ticks
+  // piercing it, letters outside. viewBox is -15..115 so the outside glyphs fit.
   const svg = document.getElementById('bezelSvg');
   const cx = 50, cy = 50, ns = 'http://www.w3.org/2000/svg';
-  const ring = document.createElementNS(ns, 'circle');
-  ring.setAttribute('cx', cx); ring.setAttribute('cy', cy); ring.setAttribute('r', 47);
-  ring.setAttribute('fill', 'rgba(12,12,13,0.45)');
-  ring.setAttribute('stroke', 'rgba(120,118,110,0.4)'); ring.setAttribute('stroke-width', '0.6');
-  svg.appendChild(ring);
-  for (let d = 0; d < 360; d += 5) {
-    const major = d % 90 === 0, mid = d % 45 === 0;
-    const a = (d - 90) * Math.PI / 180;
-    const r1 = 47, r2 = major ? 39 : mid ? 42 : 44;
-    const ln = document.createElementNS(ns, 'line');
-    ln.setAttribute('x1', cx + Math.cos(a) * r1); ln.setAttribute('y1', cy + Math.sin(a) * r1);
-    ln.setAttribute('x2', cx + Math.cos(a) * r2); ln.setAttribute('y2', cy + Math.sin(a) * r2);
-    ln.setAttribute('stroke', major ? '#ffffff' : 'rgba(166,163,155,0.55)');
-    ln.setAttribute('stroke-width', major ? '1.2' : '0.6');
-    svg.appendChild(ln);
-  }
+  const add = (tag, attrs) => {
+    const el = document.createElementNS(ns, tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    svg.appendChild(el); return el;
+  };
+  add('circle', { cx, cy, r: 47, fill: 'rgba(13,13,12,0.45)',
+    stroke: 'rgba(235,233,229,0.85)', 'stroke-width': '0.9' });
+  add('circle', { cx, cy, r: 44, fill: 'none',
+    stroke: 'rgba(235,233,229,0.30)', 'stroke-width': '0.6' });
   [['N', 0], ['E', 90], ['S', 180], ['W', 270]].forEach(([ch, d]) => {
-    const a = (d - 90) * Math.PI / 180, r = 31;
-    const tx = document.createElementNS(ns, 'text');
-    tx.setAttribute('x', cx + Math.cos(a) * r); tx.setAttribute('y', cy + Math.sin(a) * r);
-    tx.setAttribute('text-anchor', 'middle'); tx.setAttribute('dominant-baseline', 'central');
-    tx.setAttribute('font-family', "'Space Mono', monospace");
-    tx.setAttribute('font-size', ch === 'N' ? '9' : '7.5');
-    tx.setAttribute('font-weight', '700');
-    tx.setAttribute('fill', ch === 'N' ? '#ffffff' : '#a6a39b');
+    const a = (d - 90) * Math.PI / 180;
+    add('line', {
+      x1: cx + Math.cos(a) * 40, y1: cy + Math.sin(a) * 40,
+      x2: cx + Math.cos(a) * 52, y2: cy + Math.sin(a) * 52,
+      stroke: '#ebe9e5', 'stroke-width': '1.1'
+    });
+    const tx = add('text', {
+      x: cx + Math.cos(a) * 59, y: cy + Math.sin(a) * 59,
+      'text-anchor': 'middle', 'dominant-baseline': 'central',
+      'font-family': "'Space Mono', monospace", 'font-size': '9', 'font-weight': '700',
+      fill: ch === 'N' ? '#ebe9e5' : 'rgba(235,233,229,0.72)'
+    });
     tx.textContent = ch;
-    svg.appendChild(tx);
   });
 })();
 
@@ -988,8 +1048,6 @@ async function startCamera() {
 }
 
 // ── init (permission gate) ──
-
-// ── init (permission gate) ──
 async function init(orientPromise) {
   $('gate').style.display = 'none';
   $('statusText').textContent = 'recording';
@@ -1023,7 +1081,9 @@ $('shutter').addEventListener('click', () => {
   const shot = { seq,
     prefix: filePrefix(projectName),   // frozen at capture — renaming later won't rewrite history
     position: currentPosition ? { ...currentPosition } : null,
-    heading: currentHeading, accuracy: currentAccuracy, timestamp: Date.now() };
+    heading: currentHeading, accuracy: currentAccuracy, timestamp: Date.now(), note: '' };
+  if (shot.accuracy != null && shot.accuracy > 10)
+    showToast(`Low GPS accuracy \u2014 \u00B1${Math.round(shot.accuracy * 3.28084)} ft on this capture`, 3200);
   shots.push(shot);
   saveShots();
   refreshMapBtn();
@@ -1048,57 +1108,174 @@ function shotFile(s) {
 }
 
 // One toast for capture-confirm AND errors (no window.alert — dead/jarring in iOS PWA)
+let toastTimer = null, autoSaveTimer = null, resizeTimer = null;
 function showToast(html, ms = 1800) {
   const t = $('toast');
   t.innerHTML = html;
-  t.classList.add('show'); clearTimeout(window._tt);
-  window._tt = setTimeout(() => t.classList.remove('show'), ms);
+  t.classList.add('show'); clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), ms);
 }
 
 // Compass dial burned into the photo. Same artwork as the on-screen compass
 // (ring, 5-degree ticks, cardinals) but with NORTH FIXED UP and a plain line
 // to the heading — a still photo has nothing to turn. Scaled from the
 // compass's own 100-unit box to radius r.
-function burnDial(ctx, cx, cy, r, heading) {
+// Reticle dial — drafting register. Hairline double ring, cardinal ticks that
+// pierce it, letters set OUTSIDE the ring, a needle through an open centre.
+// Letters and ticks reach 1.26x the ring radius, so callers must inset by
+// dialSpan(r), not r, or the glyphs clip off the frame edge.
+function dialSpan(r) { return r * 62 / 47; }
+function burnDial(ctx, cx, cy, r, heading, pos, dialLabel) {
   const U = r / 47;
   ctx.save();
   ctx.translate(cx, cy);
 
-  ctx.beginPath(); ctx.arc(0, 0, 47 * U, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(12,12,13,0.72)'; ctx.fill();
-  ctx.strokeStyle = 'rgba(120,118,110,0.55)'; ctx.lineWidth = Math.max(0.6, 0.6 * U); ctx.stroke();
-
-  for (let d = 0; d < 360; d += 5) {
-    const major = d % 90 === 0, mid = d % 45 === 0;
-    const a = (d - 90) * Math.PI / 180;
-    const r1 = 47 * U, r2 = (major ? 39 : mid ? 42 : 44) * U;
-    ctx.beginPath();
-    ctx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1);
-    ctx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2);
-    ctx.strokeStyle = major ? '#ffffff' : 'rgba(166,163,155,0.55)';
-    ctx.lineWidth = Math.max(0.5, (major ? 1.2 : 0.6) * U);
-    ctx.stroke();
+  // map face, if a tile was prefetched for this position
+  let painted = false;
+  if (useAerial && dialTile && pos) {
+    try {
+      const c = lonLatToTile(pos.lng, pos.lat, DIAL_ZOOM);
+      const ox = (c.x - dialTile.tx) * TILE;
+      const oy = (c.y - dialTile.ty) * TILE;
+      const span = 160;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(0, 0, 47 * U, 0, Math.PI * 2); ctx.clip();
+      ctx.drawImage(dialTile.img, ox - span / 2, oy - span / 2, span, span,
+                    -47 * U, -47 * U, 94 * U, 94 * U);
+      ctx.fillStyle = 'rgba(13,13,12,0.22)';
+      ctx.fillRect(-47 * U, -47 * U, 94 * U, 94 * U);
+      ctx.restore();
+      painted = true;
+    } catch (e) { painted = false; }
+  }
+  if (!painted) {
+    ctx.beginPath(); ctx.arc(0, 0, 47 * U, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(13,13,12,0.45)'; ctx.fill();
   }
 
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.font = `700 ${Math.max(5, 11 * U)}px "Space Mono", monospace`;
+  // double hairline ring
+  ctx.beginPath(); ctx.arc(0, 0, 47 * U, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(235,233,229,0.85)'; ctx.lineWidth = Math.max(0.7, 0.9 * U); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 0, 44 * U, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(235,233,229,0.30)'; ctx.lineWidth = Math.max(0.5, 0.6 * U); ctx.stroke();
+
+  // view cone — the wedge you faced. Darken the complement so it reads on any
+  // imagery; a white wedge alone vanishes on pale tiles.
+  const a0 = (heading - 90) * Math.PI / 180, spread = 0.40;
+  ctx.save();
+  ctx.beginPath(); ctx.arc(0, 0, 44 * U, 0, Math.PI * 2); ctx.clip();
+  ctx.beginPath(); ctx.arc(0, 0, 44 * U, a0 + spread, a0 - spread); ctx.lineTo(0, 0); ctx.closePath();
+  ctx.fillStyle = 'rgba(13,13,12,0.40)'; ctx.fill();
+  const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, 44 * U);
+  cg.addColorStop(0, 'rgba(235,233,229,0.34)');
+  cg.addColorStop(1, 'rgba(235,233,229,0.05)');
+  ctx.fillStyle = cg;
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 44 * U, a0 - spread, a0 + spread);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(235,233,229,0.75)'; ctx.lineWidth = Math.max(0.6, 1 * U);
+  [a0 - spread, a0 + spread].forEach(a => {
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * 22 * U, Math.sin(a) * 22 * U);
+    ctx.lineTo(Math.cos(a) * 44 * U, Math.sin(a) * 44 * U);
+    ctx.stroke();
+  });
+
+  // cardinal ticks pierce the ring; letters sit outside it
   [['N', 0], ['E', 90], ['S', 180], ['W', 270]].forEach(([ch, d]) => {
-    const a = (d - 90) * Math.PI / 180, rr = 31 * U;
-    ctx.fillStyle = d === 0 ? '#ffffff' : 'rgba(236,233,225,0.75)';
+    const a = (d - 90) * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * 40 * U, Math.sin(a) * 40 * U);
+    ctx.lineTo(Math.cos(a) * 52 * U, Math.sin(a) * 52 * U);
+    ctx.strokeStyle = '#ebe9e5'; ctx.lineWidth = Math.max(0.7, 1.1 * U); ctx.stroke();
+  });
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `700 ${Math.max(5, 9 * U)}px "Space Mono", monospace`;
+  [['N', 0], ['E', 90], ['S', 180], ['W', 270]].forEach(([ch, d]) => {
+    const a = (d - 90) * Math.PI / 180, rr = 59 * U;
+    ctx.fillStyle = 'rgba(13,13,12,0.70)';
+    ctx.fillText(ch, Math.cos(a) * rr + Math.max(0.6, U), Math.sin(a) * rr + Math.max(0.6, U));
+    ctx.fillStyle = ch === 'N' ? '#ebe9e5' : 'rgba(235,233,229,0.72)';
     ctx.fillText(ch, Math.cos(a) * rr, Math.sin(a) * rr);
   });
 
-  // heading line from the hub — no arrowhead
+  // needle: from the open centre out to the ring, on the heading
   ctx.save();
-  ctx.rotate(heading * Math.PI / 180);      // 0 deg = up = north
-  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -40 * U);
-  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(1, 3 * U); ctx.lineCap = 'round';
-  ctx.stroke();
+  ctx.rotate(heading * Math.PI / 180);
+  ctx.beginPath(); ctx.moveTo(0, -44 * U); ctx.lineTo(0, 12 * U);
+  ctx.strokeStyle = '#ebe9e5'; ctx.lineWidth = Math.max(0.8, 1.4 * U); ctx.stroke();
   ctx.restore();
 
-  ctx.beginPath(); ctx.arc(0, 0, 3.2 * U, 0, Math.PI * 2);
-  ctx.fillStyle = '#ece9e1'; ctx.fill();
+  // open centre — drafting register, not a solid hub
+  ctx.beginPath(); ctx.arc(0, 0, 3.4 * U, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(13,13,12,0.80)'; ctx.fill();
+  ctx.strokeStyle = '#ebe9e5'; ctx.lineWidth = Math.max(0.6, 1 * U); ctx.stroke();
+
   ctx.restore();
+}
+
+// Burn-in — the viewfinder remembered onto the photo. Same scrim gradient the
+// .readout uses on screen, one ink (#ebe9e5, the app ink), no blur shadows
+// (banned; a crisp 1px offset does the separation work instead).
+const INK = '#ebe9e5';
+const INK_DIM = 'rgba(235,233,229,0.62)';
+function drawBurnIn(ctx, W, H, shot) {
+  const pad     = Math.round(W * 0.0275);
+  const readSz  = Math.round(W * 0.028);
+  const lblSz   = Math.round(readSz * 0.78);
+  const numSz   = Math.round(readSz * 1.75);
+  const r       = Math.round(W * 0.22 / 2);
+
+  // the viewfinder's own scrim: bg 92% -> 50% at 55% height -> transparent
+  const gh = Math.round(H * 0.24);
+  const g = ctx.createLinearGradient(0, H - gh, 0, H);
+  g.addColorStop(0, 'rgba(13,13,12,0)');
+  g.addColorStop(0.45, 'rgba(13,13,12,0.50)');
+  g.addColorStop(1, 'rgba(13,13,12,0.92)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, H - gh, W, gh);
+
+  // crisp offset — ink over its own shadow colour, one pixel down-right
+  const off = Math.max(1, Math.round(readSz * 0.06));
+  const put = (txt, x, y, font, ink) => {
+    ctx.font = font;
+    ctx.fillStyle = 'rgba(13,13,12,0.65)';
+    ctx.fillText(txt, x + off, y + off);
+    ctx.fillStyle = ink;
+    ctx.fillText(txt, x, y);
+  };
+
+  // right: compass. Letters sit outside the ring, so inset by the drawn span.
+  if (shot.heading != null) {
+    const span = dialSpan(r);
+    burnDial(ctx, W - pad - span, H - pad - span, r, shot.heading, shot.position, false);
+  }
+
+  // left stack, bottom-up: project, elevation, then number | bearing
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  let y = H - pad;
+  if (projectName) {
+    put(projectName.toUpperCase(), pad, y, `400 ${lblSz}px "Space Mono", monospace`, INK_DIM);
+    y -= lblSz * 1.7;
+  }
+  if (shot.position && shot.position.alt != null) {
+    put(`ALT ${Math.round(shot.position.alt * 3.28084)} FT`, pad, y,
+        `700 ${lblSz}px "Space Mono", monospace`, INK);
+    y -= lblSz * 1.9;
+  }
+
+  const seqStr = String(shot.seq).padStart(3, '0');
+  put(seqStr, pad, y, `700 ${numSz}px "Space Mono", monospace`, INK);
+  ctx.font = `700 ${numSz}px "Space Mono", monospace`;
+  let x = pad + ctx.measureText(seqStr).width + numSz * 0.34;
+
+  if (shot.heading != null) {
+    put('|', x, y, `400 ${numSz}px "Space Mono", monospace`, INK_DIM);
+    x += ctx.measureText('|').width + numSz * 0.34;
+    put(`${Math.round(shot.heading)}\u00B0 ${card(shot.heading)}`, x, y,
+        `700 ${Math.round(numSz * 0.62)}px "Space Mono", monospace`, INK);
+  }
 }
 
 async function capturePhoto(shot) {
@@ -1110,53 +1287,7 @@ async function capturePhoto(shot) {
   const ctx = cv.getContext('2d');
   ctx.drawImage(v, 0, 0, W, H);
 
-  // ── burn-in bar ──────────────────────────────────────────────────────────
-  // Three zones on one centreline: shot number left, project/time centred and
-  // dimmed, bearing + compass right. Only the number and dial are meant to read
-  // at a glance; the centre is provenance you look for rather than see.
-  const pad = Math.round(W * 0.015);
-  const barH = Math.round(H * 0.13);
-  const y0 = H - barH;
-  const axis = y0 + barH / 2;
-  const trk = (t, sp) => t.split('').join('\u200A'.repeat(sp));
-
-  ctx.fillStyle = 'rgba(12,12,13,0.98)';
-  ctx.fillRect(0, y0, W, barH);
-
-  // right: compass, with the bearing immediately to its left
-  const r = Math.round(barH * 0.61 / 2);
-  if (shot.heading != null) burnDial(ctx, W - pad - r, axis, r, shot.heading);
-  let bearX = W - pad - r * 2 - Math.round(W * 0.014);
-  const bSize = Math.max(8, Math.round(barH * 0.20));
-  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#ece9e1';
-  ctx.font = `700 ${bSize}px "Space Mono", monospace`;
-  ctx.fillText(shot.heading != null
-    ? `${Math.round(shot.heading)}\u00B0 ${card(shot.heading)}` : 'NO BEARING',
-    bearX, axis + Math.round(bSize * 0.08));
-
-  // left: shot number
-  const numSize = Math.round(barH * 0.46);
-  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#ece9e1';
-  ctx.font = `700 ${numSize}px "Space Mono", monospace`;
-  ctx.fillText(String(shot.seq).padStart(3, '0'), pad, axis + Math.round(numSize * 0.075));
-
-  // centre: project name over timestamp, dimmed
-  const rows = [];
-  if (projectName) rows.push([projectName.toUpperCase(), true]);
-  rows.push([new Date(shot.timestamp).toLocaleString().toUpperCase(), false]);
-  const cSize = Math.max(7, Math.round(barH * 0.10));
-  const lead = cSize * 1.85;
-  let cy = axis - (rows.length * lead) / 2 + cSize;
-  rows.forEach(([t, strong]) => {
-    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = strong ? 'rgba(236,233,225,0.40)' : 'rgba(236,233,225,0.24)';
-    ctx.font = `${strong ? 700 : 400} ${cSize}px "Space Mono", monospace`;
-    ctx.fillText(trk(t, 1), Math.round(W / 2), cy);
-    cy += lead;
-  });
-  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  drawBurnIn(ctx, W, H, shot);
 
   const blob = await new Promise(res => cv.toBlob(res, 'image/jpeg', 0.92));
   if (!blob) return;
@@ -1271,7 +1402,7 @@ function renderSwatches() {
     applyTheme(b.dataset.k); renderSwatches();
   }));
 }
-function openSettings() { renderSwatches(); renderTrash(); syncModeUI(); renderStorage(); $('settings').classList.add('active');
+function openSettings() { renderSwatches(); renderTrash(); syncModeUI(); syncAerialUI(); renderStorage(); $('settings').classList.add('active');
   $('projInput').value = projectName;
   document.body.classList.add('settings-open');
   $('markBtn').classList.add('expanded'); $('markBtn').setAttribute('aria-expanded', 'true'); }
@@ -1325,6 +1456,18 @@ function armEmptyTrash() {
 }
 
 // ── photo saving: per-shot share sheet, or hold and save together ──
+function syncAerialUI() {
+  const t = $('tgAerial'); if (!t) return;
+  t.classList.toggle('on', useAerial);
+  $('aerialHint').textContent = useAerial
+    ? 'Uses the same map tiles as the Map view, fetched when you get a fix. Open the map once on site and they\'re already cached. Captures with no tile get the plain compass.'
+    : 'Compass only. Drawn from the device, works anywhere.';
+}
+$('tgAerial').addEventListener('click', () => {
+  useAerial = !useAerial; if (!useAerial) dialTile = null;
+  save(); syncAerialUI();
+});
+
 function syncModeUI() {
   document.querySelectorAll('#modeSeg button').forEach(b =>
     b.classList.toggle('on', b.dataset.mode === saveMode));
@@ -1407,47 +1550,90 @@ async function maybeAutoSave() {
   const t = $('toast');
   t.innerHTML = `<b>${list.length}</b> photos held &nbsp; <button class="toast-undo" id="autoSaveBtn">Save now</button>`;
   t.classList.add('show', 'has-action');
-  clearTimeout(window._tt); clearTimeout(window._autoT);
-  window._autoT = setTimeout(() => t.classList.remove('show', 'has-action'), 9000);
+  clearTimeout(toastTimer); clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => t.classList.remove('show', 'has-action'), 9000);
   const btn = $('autoSaveBtn');
   if (btn) btn.addEventListener('click', () => {
-    t.classList.remove('show', 'has-action'); clearTimeout(window._autoT);
+    t.classList.remove('show', 'has-action'); clearTimeout(autoSaveTimer);
     saveAllPending();
   });
 }
 
 // header mark button toggles settings open/closed (splays in place, stays visible top-right)
 
-// CSV export (Data section — the backup story)
+// ── Data section — the backup story. One delivery path for every export. ──
+function deliverFile(blob, fname, mime) {
+  const file = window.File ? new File([blob], fname, { type: mime }) : null;
+  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    navigator.share({ files: [file] }).catch(() => {}); return;
+  }
+  const url = URL.createObjectURL(blob); const a = document.createElement('a');
+  a.href = url; a.download = fname; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+const stampName = ext => `${filePrefix(projectName)}_${new Date().toISOString().slice(0,10)}.${ext}`;
+
 function csvEscape(v){ v = v==null?'':String(v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
 $('exportBtn').addEventListener('click', () => {
-  const head = ['Photo','Seq','Latitude','Longitude','Heading','Cardinal','Accuracy_m','Timestamp_ISO'];
+  const head = ['Photo','Seq','Latitude','Longitude','Heading','Cardinal','Accuracy_m','Timestamp_ISO','Note'];
   const rows = shots.map(s => [
     `${shotFile(s)}.jpg`, s.seq,
     s.position ? s.position.lat.toFixed(6) : '', s.position ? s.position.lng.toFixed(6) : '',
     s.heading != null ? Math.round(s.heading) : '', s.heading != null ? card(s.heading) : '',
-    s.accuracy != null ? Math.round(s.accuracy) : '', new Date(s.timestamp).toISOString()
+    s.accuracy != null ? Math.round(s.accuracy) : '', new Date(s.timestamp).toISOString(), s.note || ''
   ]);
   const csv = [head, ...rows].map(r => r.map(csvEscape).join(',')).join('\r\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const fname = `${filePrefix(projectName)}_${new Date().toISOString().slice(0,10)}.csv`;
-  const file = window.File ? new File([blob], fname, { type: 'text/csv' }) : null;
-  if (file && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file] }).catch(()=>{}); return; }
-  const url = URL.createObjectURL(blob); const a = document.createElement('a');
-  a.href = url; a.download = fname; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  deliverFile(new Blob([csv], { type: 'text/csv' }), stampName('csv'), 'text/csv');
 });
+// GPX: one waypoint per located capture — opens in any GIS or survey tool.
+$('gpxBtn').addEventListener('click', () => {
+  const located = shots.filter(s => s.position);
+  if (!located.length) { showToast('No located captures yet', 2200); return; }
+  const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const wpts = located.map(s => {
+    const ele = s.position.alt != null ? `\n    <ele>${s.position.alt.toFixed(1)}</ele>` : '';
+    const parts = [];
+    if (s.heading != null) parts.push(`heading ${Math.round(s.heading)}\u00B0 ${card(s.heading)}`);
+    if (s.note) parts.push(s.note);
+    const desc = parts.length ? `\n    <desc>${esc(parts.join(' \u2014 '))}</desc>` : '';
+    return `  <wpt lat="${s.position.lat.toFixed(6)}" lon="${s.position.lng.toFixed(6)}">${ele}
+    <time>${new Date(s.timestamp).toISOString()}</time>
+    <name>${String(s.seq).padStart(3,'0')}</name>${desc}
+  </wpt>`;
+  }).join('\n');
+  const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Field Camera \u2014 backfield.io" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata><name>${esc(projectName || 'Field Camera captures')}</name></metadata>
+${wpts}
+</gpx>`;
+  deliverFile(new Blob([gpx], { type: 'application/gpx+xml' }), stampName('gpx'), 'application/gpx+xml');
+});
+
+// GeoJSON: same points as a FeatureCollection, for web-mapping tools.
+$('geojsonBtn').addEventListener('click', () => {
+  const located = shots.filter(s => s.position);
+  if (!located.length) { showToast('No located captures yet', 2200); return; }
+  const fc = { type: 'FeatureCollection', features: located.map(s => ({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: s.position.alt != null
+      ? [+s.position.lng.toFixed(6), +s.position.lat.toFixed(6), +s.position.alt.toFixed(1)]
+      : [+s.position.lng.toFixed(6), +s.position.lat.toFixed(6)] },
+    properties: { seq: s.seq, photo: `${shotFile(s)}.jpg`,
+      heading: s.heading != null ? Math.round(s.heading) : null,
+      accuracy_m: s.accuracy != null ? Math.round(s.accuracy) : null,
+      time: new Date(s.timestamp).toISOString(),
+      note: s.note || undefined }
+  })) };
+  deliverFile(new Blob([JSON.stringify(fc, null, 2)], { type: 'application/geo+json' }),
+    stampName('geojson'), 'application/geo+json');
+});
+
 $('importBtn').addEventListener('click', () => $('csvFile').click());
 
 // ── JSON backup — whole workspace, one file; restore runs through normalize() ──
 $('backupBtn').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify(currentState(), null, 2)], { type: 'application/json' });
-  const fname = `field-camera-backup_${new Date().toISOString().slice(0,10)}.json`;
-  const file = window.File ? new File([blob], fname, { type: 'application/json' }) : null;
-  if (file && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file] }).catch(()=>{}); return; }
-  const url = URL.createObjectURL(blob); const a = document.createElement('a');
-  a.href = url; a.download = fname; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  deliverFile(new Blob([JSON.stringify(currentState(), null, 2)], { type: 'application/json' }),
+    `field-camera-backup_${new Date().toISOString().slice(0,10)}.json`, 'application/json');
 });
 $('restoreBtn').addEventListener('click', () => $('jsonFile').click());
 $('jsonFile').addEventListener('change', e => {
@@ -1460,7 +1646,9 @@ $('jsonFile').addEventListener('change', e => {
       shots = state.shots; trash = state.trash; nextSeq = state.nextSeq;
       currentStyle = state.settings.mapStyle; theme = state.settings.theme; printOpts = state.settings.printOpts;
       zoomOffset = state.settings.zoomOffset; projectName = state.settings.projectName;
-      saveMode = state.settings.saveMode; saveEvery = state.settings.saveEvery; saveEvery = state.settings.saveEvery;
+      saveMode = state.settings.saveMode; saveEvery = state.settings.saveEvery;
+      useAerial = state.settings.useAerial;
+  useAerial = state.settings.useAerial; saveEvery = state.settings.saveEvery;
       save(state);
       applyTheme(theme); syncStyleButtons(); syncToggles(); refreshMapBtn();
       if ($('mapView').classList.contains('active')) drawMap();
@@ -1520,14 +1708,41 @@ function showShotInfo(shot, num) {
   num = String(num).padStart(3, '0');   // match the burned-in / filename format
   const hdg = shot.heading != null ? `${Math.round(shot.heading)}° ${card(shot.heading)}` : '—';
   const ts = new Date(shot.timestamp).toLocaleString();
+  const noteRow = shot.note
+    ? `<div class="si-note" id="noteShow">${shot.note.replace(/[<>&]/g, '')}</div>`
+    : '';
   $('shotInfo').innerHTML = `
     <div><div class="label">Selected</div>
       <div class="si-num">${num}</div>
       <div class="v small">${shot.position ? shot.position.lat.toFixed(6) + '°' : '—'}<br>${shot.position ? shot.position.lng.toFixed(6) + '°' : ''}</div></div>
     <div><div class="label">Heading</div><div class="v">${hdg}</div>
       <div class="label" style="margin-top:8px">Time</div><div class="v small">${ts}</div></div>
-    <div class="si-actions"><button class="mini" id="delShotBtn">Delete capture</button></div>`;
+    ${noteRow}
+    <div class="si-actions">
+      <button class="mini" id="noteBtn">${shot.note ? 'Edit note' : 'Add note'}</button>
+      <button class="mini" id="delShotBtn">Delete capture</button></div>`;
   $('delShotBtn').addEventListener('click', () => armDelete(shot.seq));
+  $('noteBtn').addEventListener('click', () => editNote(shot));
+}
+
+// Inline note editor in the info panel. Input is body sans at 16px — below
+// that iOS zooms the page on focus (backfield-01-system input law).
+function editNote(shot) {
+  const act = $('shotInfo').querySelector('.si-actions');
+  act.innerHTML = `
+    <input type="text" class="note-input" id="noteInput" maxlength="280"
+      placeholder="Note for ${String(shot.seq).padStart(3,'0')}" value="${(shot.note||'').replace(/"/g,'&quot;')}">
+    <div class="del-row">
+      <button class="mini" id="noteCancel">Cancel</button>
+      <button class="mini filled" id="noteSave">Save</button></div>`;
+  const inp = $('noteInput'); inp.focus();
+  $('noteCancel').addEventListener('click', () => showShotInfo(shot, shot.seq));
+  $('noteSave').addEventListener('click', () => {
+    shot.note = inp.value.trim().slice(0, 280);
+    saveShots();
+    showShotInfo(shot, shot.seq);
+    showToast(shot.note ? 'Note saved' : 'Note cleared', 1800);
+  });
 }
 function armDelete(seq) {
   $('shotInfo').querySelector('.si-actions').innerHTML = `
@@ -1552,7 +1767,7 @@ function showUndo(seq) {
   const rec = trash.find(x => x.seq === seq);
   t.innerHTML = `Deleted <b>${rec ? shotFile(rec) : 'field-' + String(seq).padStart(3,'0')}</b> &nbsp; <button class="toast-undo" id="undoBtn">Undo</button>`;
   t.classList.add('show', 'has-action');
-  clearTimeout(window._tt); clearTimeout(undoTimer);
+  clearTimeout(toastTimer); clearTimeout(undoTimer);
   undoTimer = setTimeout(() => { t.classList.remove('show', 'has-action'); }, 10000);
   $('undoBtn').addEventListener('click', () => {
     restoreShot(seq);
@@ -1636,11 +1851,13 @@ async function renderMapInto(ctx, W, H, dark) {
   if (dark) { ctx.fillStyle = 'rgba(12,12,13,0.42)'; ctx.fillRect(0, 0, W, H); }
   const project = (lat, lng) => projectAtZoom(lat, lng, cLat, cLng, zoom, 0, 0, W, H);
 
+  drawScaleBar(ctx, W, H, cLat, zoom, dark);
+
   const inkLine = dark ? 'rgba(236,233,225,0.4)' : 'rgba(0,0,0,0.55)';
   const pinFill = dark ? '#ece9e1' : '#ffffff';
   const pinEdge = dark ? '#0c0c0d' : '#000000';
-  const coneCol = dark ? '#ffffff' : '#000000';
-  const coneFill = dark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.18)';
+  const coneCol = dark ? '#ebe9e5' : '#000000';
+  const coneFill = dark ? 'rgba(235,233,229,0.28)' : 'rgba(0,0,0,0.18)';
 
   if (located.length > 1) {
     ctx.strokeStyle = inkLine; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]);
@@ -1674,6 +1891,31 @@ async function renderMapInto(ctx, W, H, dark) {
     ctx.font = `700 ${isSel ? 15 : 12}px "Space Mono", monospace`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(shot.seq, x, y);
   });
+}
+
+// Scale bar, bottom-left of every map render. Web-mercator ground resolution
+// at this latitude and zoom, snapped to a round imperial distance.
+function drawScaleBar(ctx, W, H, lat, zoom, dark) {
+  const mPerPx = 156543.03392 * Math.cos(lat * Math.PI / 180) / Math.pow(2, zoom);
+  const ftPerPx = mPerPx * 3.28084;
+  const targetPx = W * 0.16;
+  const nice = [10, 20, 50, 100, 200, 500, 1000, 2000, 5280, 10560, 26400];
+  let ft = nice[0];
+  for (const n of nice) if (n / ftPerPx <= targetPx) ft = n;
+  const px = ft / ftPerPx;
+  const label = ft >= 5280 ? `${ft / 5280} MI` : `${ft} FT`;
+  const x = Math.round(W * 0.03), y = Math.round(H - Math.max(16, H * 0.035));
+  const ink = dark ? 'rgba(236,233,225,0.9)' : '#000';
+  ctx.save();
+  ctx.strokeStyle = ink; ctx.lineWidth = Math.max(1, W * 0.0012); ctx.lineCap = 'butt';
+  ctx.beginPath();
+  ctx.moveTo(x, y - 5); ctx.lineTo(x, y); ctx.lineTo(x + px, y); ctx.lineTo(x + px, y - 5);
+  ctx.stroke();
+  ctx.fillStyle = ink;
+  ctx.font = `700 ${Math.max(9, Math.round(W * 0.011))}px "Space Mono", monospace`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  ctx.fillText(label, x, y - 8);
+  ctx.restore();
 }
 
 // ── style picker ──
@@ -1722,7 +1964,7 @@ async function buildSheetPages(onStep) {
   let head = `<div class="print-wordmark">Field Camera.</div>
     <div class="print-eyebrow">${projectName ? projectName.replace(/[<>&]/g, '') : 'Position + bearing · capture record'}</div>
     <hr class="print-rule">
-    <div class="print-meta">${shots.length} capture${shots.length===1?'':'s'} &nbsp;·&nbsp; ${located.length} located &nbsp;·&nbsp; ${dstr}</div>`;
+    <div class="print-meta">${shots.length} capture${shots.length===1?'':'s'} &nbsp;·&nbsp; ${located.length} located${(() => { const w = walkStats(); return located.length > 1 ? ` &nbsp;·&nbsp; ${w.dist} walked &nbsp;·&nbsp; ${w.dur}` : ''; })()} &nbsp;·&nbsp; ${dstr}</div>`;
 
   if (printOpts.map) {
     let mapImg = '';
@@ -1743,7 +1985,8 @@ async function buildSheetPages(onStep) {
     const withThumb = shots.filter(s => tmap[s.seq]);
     const cells = withThumb.map(s => {
       const hdg = s.heading != null ? `${Math.round(s.heading)}° ${card(s.heading)}` : '—';
-      return `<figure class="pcell"><img src="${tmap[s.seq]}" alt="${s.seq}"><figcaption>${String(s.seq).padStart(3,'0')} · ${hdg}</figcaption></figure>`;
+      const note = s.note ? ` \u2014 ${s.note.replace(/[<>&]/g, '')}` : '';
+      return `<figure class="pcell"><img src="${tmap[s.seq]}" alt="${s.seq}"><figcaption>${String(s.seq).padStart(3,'0')} · ${hdg}${note}</figcaption></figure>`;
     }).join('');
     const missing = shots.length - withThumb.length;
     pages.push((head || '') + `<div class="print-wordmark" style="font-size:10pt;margin:0">Photos</div><hr class="print-rule">
@@ -1799,7 +2042,7 @@ $('previewClose').addEventListener('click', () => $('preview').classList.remove(
 $('previewPrint').addEventListener('click', () => { $('preview').classList.remove('active'); buildAndPrint(); });
 
 // resize redraw
-window.addEventListener('resize', () => { if ($('mapView').classList.contains('active')) { clearTimeout(window._rt); window._rt = setTimeout(drawMap, 200); } });
+window.addEventListener('resize', () => { if ($('mapView').classList.contains('active')) { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawMap, 200); } });
 window.addEventListener('orientationchange', () => { if ($('mapView').classList.contains('active')) setTimeout(drawMap, 300); });
 
 syncToggles();
